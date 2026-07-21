@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
             const html = await scrapeAttendanceAndMarks(cookies);
             const attendance = parseAttendance(html);
             const hash = hashData(attendance);
-            await cacheData(cacheKey, attendance, 3000);
-            await cacheData(hashKey, hash, 3000);
+            await cacheData(cacheKey, attendance, 900); // 15 min
+            await cacheData(hashKey, hash, 900);
             return NextResponse.json({ success: true, data: attendance, source: "fresh" });
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Attendance temporarily unavailable" });

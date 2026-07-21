@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
             const html = await scrapeAttendanceAndMarks(cookies);
             const marks = parseMarks(html);
             const hash = hashData(marks);
-            await cacheData(cacheKey, marks, 86400);
-            await cacheData(hashKey, hash, 86400);
+            await cacheData(cacheKey, marks, 900); // 15 min
+            await cacheData(hashKey, hash, 900);
             return NextResponse.json({ success: true, data: marks, source: "fresh" });
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Marks temporarily unavailable" });

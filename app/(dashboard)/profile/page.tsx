@@ -3,14 +3,16 @@
 import PageWrapper from "@/components/layout/PageWrapper";
 import ProfileCard from "@/components/profile/ProfileCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getProfileApi } from "@/lib/api";
 import { Student } from "@/utils/types";
 import { motion } from "framer-motion";
 
 export default function ProfilePage() {
-    const { data, loading, error } = useFetch<Student>(
-        getProfileApi as () => Promise<Student>
+    const { data, loading, error } = useFetchWithCache<Student>(
+        getProfileApi as () => Promise<Student>,
+        "profile",
+        30 * 24 * 60 * 60 * 1000 // 1 month TTL — profile rarely changes
     );
 
     if (loading) return <LoadingScreen />;

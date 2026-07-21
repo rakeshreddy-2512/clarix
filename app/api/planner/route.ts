@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
         const htmls = await scrapePlanner(cookies);
         const planner = parsePlanner(htmls);
         const hash = hashData(planner);
-        await cacheData(cacheKey, planner, 86400);
-        await cacheData(hashKey, hash, 86400);
+        await cacheData(cacheKey, planner, 900); // 15 min
+        await cacheData(hashKey, hash, 900);
         return NextResponse.json({ success: true, data: planner, source: "fresh" });
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });

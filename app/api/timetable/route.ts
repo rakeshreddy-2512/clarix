@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
         const html = await scrapeTimetable(cookies);
         const result = parseTimetable(html);
         const hash = hashData(result);
-        await cacheData(cacheKey, result, 86400);
-        await cacheData(hashKey, hash, 86400);
+        await cacheData(cacheKey, result, 900); // 15 min
+        await cacheData(hashKey, hash, 900);
         return NextResponse.json({ success: true, data: result, source: "fresh" });
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch timetable" }, { status: 500 });

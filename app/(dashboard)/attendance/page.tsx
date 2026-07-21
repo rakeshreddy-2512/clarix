@@ -7,15 +7,17 @@ import Header from "@/components/layout/Header";
 import TabSwitch from "@/components/ui/TabSwitch";
 import AttendanceCard from "@/components/attendance/AttendanceCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getAttendanceApi } from "@/lib/api";
 import { AttendanceCourse } from "@/utils/types";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
 
 export default function AttendancePage() {
     const [activeTab, setActiveTab] = useState("Theory");
-    const { data, loading, error } = useFetch<AttendanceCourse[]>(
-        getAttendanceApi as () => Promise<AttendanceCourse[]>
+    const { data, loading, error } = useFetchWithCache<AttendanceCourse[]>(
+        getAttendanceApi as () => Promise<AttendanceCourse[]>,
+        "attendance",
+        10000 // 10 seconds TTL like acadia.works
     );
 
     const courses = data || [];

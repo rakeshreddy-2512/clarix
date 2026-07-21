@@ -9,14 +9,16 @@ import Header from "@/components/layout/Header";
 import TabSwitch from "@/components/ui/TabSwitch";
 import MarkCard from "@/components/marks/MarkCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getMarksApi } from "@/lib/api";
 import { MarkCourse } from "@/utils/types";
 
 export default function MarksPage() {
     const [activeTab, setActiveTab] = useState("Theory");
-    const { data, loading, error } = useFetch<MarkCourse[]>(
-        getMarksApi as () => Promise<MarkCourse[]>
+    const { data, loading, error } = useFetchWithCache<MarkCourse[]>(
+        getMarksApi as () => Promise<MarkCourse[]>,
+        "marks",
+        10000 // 10 seconds TTL
     );
 
     const courses = data || [];
@@ -35,7 +37,6 @@ export default function MarksPage() {
                 <TabSwitch tabs={["Theory", "Practical"]} active={activeTab} onChange={setActiveTab} layoutId="marks-tab" />
             </div>
 
-            {/* GPA/CGPA button — mobile only */}
             <div style={{ padding: "0 20px 16px" }} className="md:hidden">
                 <Link href="/gpa">
                     <div style={{
@@ -75,20 +76,17 @@ export default function MarksPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Overall Performance */}
             {courses.length > 0 && (
                 <div style={{ padding: "32px 20px 16px", display: "flex", justifyContent: "center" }}>
                     <motion.div
                         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                         style={{
-                            width: 240, height: 240,
-                            borderRadius: 24,
+                            width: 240, height: 240, borderRadius: 24,
                             background: "linear-gradient(160deg, #0f0c29, #302b63, #24243e)",
                             boxShadow: "0 8px 32px rgba(15,12,41,0.4)",
                             display: "flex", flexDirection: "column",
-                            alignItems: "center", justifyContent: "center",
-                            gap: 8,
+                            alignItems: "center", justifyContent: "center", gap: 8,
                         }}>
                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>Overall Performance</p>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
