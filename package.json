@@ -1,0 +1,39 @@
+{
+  "name": "clarix-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.38.0",
+    "axios": "^1.18.1",
+    "axios-cookiejar-support": "^7.0.0",
+    "cheerio": "^1.2.0",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.383.0",
+    "next": "^16.2.7",
+    "qs": "^6.15.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tough-cookie": "^6.0.2",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/cheerio": "^0.22.35",
+    "@types/node": "^20",
+    "@types/qs": "^6.15.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.7",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5"
+  }
+}

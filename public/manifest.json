@@ -1,0 +1,17 @@
+{
+    "name": "Trackemia",
+    "short_name": "Trackemia",
+    "description": "SRM Academia Attendance & Marks Tracker",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#060812",
+    "theme_color": "#060812",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "64x64",
+            "type": "image/x-icon"
+        }
+    ]
+}
