@@ -1,13 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  serverExternalPackages: [
-    "axios-cookiejar-support",
-    "tough-cookie",
-    "cheerio",
-    "axios",
-  ],
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: false,
 };
 
-export default nextConfig;
+module.exports = nextConfig;
