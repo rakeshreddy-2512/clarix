@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `attendance:${regNo}`;
         const hashKey = `attendance:${regNo}:hash`;
+        const TTL = 120; // 2 minutes — aggressive refresh after class
         const cached = await getCachedData(cacheKey);
 
         if (cached) {
@@ -28,11 +29,11 @@ export async function GET(req: NextRequest) {
                     const freshHash = hashData(freshAttendance);
                     const cachedHash = await getCachedData<string>(hashKey);
                     if (freshHash !== cachedHash) {
-                        await cacheData(cacheKey, freshAttendance, 3000);
-                        await cacheData(hashKey, freshHash, 3000);
+                        await cacheData(cacheKey, freshAttendance, TTL);
+                        await cacheData(hashKey, freshHash, TTL);
                         const freshMarks = parseMarks(html);
-                        await cacheData(`marks:${regNo}`, freshMarks, 86400);
-                        await cacheData(`marks:${regNo}:hash`, hashData(freshMarks), 86400);
+                        await cacheData(`marks:${regNo}`, freshMarks, TTL);
+                        await cacheData(`marks:${regNo}:hash`, hashData(freshMarks), TTL);
                     }
                 } catch (err) { console.error(`Background attendance sync failed:`, err); }
             })();
@@ -43,8 +44,8 @@ export async function GET(req: NextRequest) {
             const html = await scrapeAttendanceAndMarks(cookies);
             const attendance = parseAttendance(html);
             const hash = hashData(attendance);
-            await cacheData(cacheKey, attendance, 900); // 15 min
-            await cacheData(hashKey, hash, 900);
+            await cacheData(cacheKey, attendance, TTL);
+            await cacheData(hashKey, hash, TTL);
             return NextResponse.json({ success: true, data: attendance, source: "fresh" });
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Attendance temporarily unavailable" });

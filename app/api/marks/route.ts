@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `marks:${regNo}`;
         const hashKey = `marks:${regNo}:hash`;
+        const TTL = 120; // 2 minutes
         const cached = await getCachedData(cacheKey);
 
         if (cached) {
@@ -28,11 +29,11 @@ export async function GET(req: NextRequest) {
                     const freshHash = hashData(freshMarks);
                     const cachedHash = await getCachedData<string>(hashKey);
                     if (freshHash !== cachedHash) {
-                        await cacheData(cacheKey, freshMarks, 86400);
-                        await cacheData(hashKey, freshHash, 86400);
+                        await cacheData(cacheKey, freshMarks, TTL);
+                        await cacheData(hashKey, freshHash, TTL);
                         const freshAttendance = parseAttendance(html);
-                        await cacheData(`attendance:${regNo}`, freshAttendance, 3000);
-                        await cacheData(`attendance:${regNo}:hash`, hashData(freshAttendance), 3000);
+                        await cacheData(`attendance:${regNo}`, freshAttendance, TTL);
+                        await cacheData(`attendance:${regNo}:hash`, hashData(freshAttendance), TTL);
                     }
                 } catch (err) { console.error(`Background marks sync failed:`, err); }
             })();
@@ -43,8 +44,8 @@ export async function GET(req: NextRequest) {
             const html = await scrapeAttendanceAndMarks(cookies);
             const marks = parseMarks(html);
             const hash = hashData(marks);
-            await cacheData(cacheKey, marks, 900); // 15 min
-            await cacheData(hashKey, hash, 900);
+            await cacheData(cacheKey, marks, TTL);
+            await cacheData(hashKey, hash, TTL);
             return NextResponse.json({ success: true, data: marks, source: "fresh" });
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Marks temporarily unavailable" });
