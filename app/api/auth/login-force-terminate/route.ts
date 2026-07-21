@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
 
         await createSession(token, { regNo, name: result.name || "Student", cookies: result.cookies });
 
-        fetchAndCacheAllData(result.cookies, regNo).catch((err) => { console.error("❌ Background fetch failed:", err.message); });
+        // ✅ Wait for ALL data before responding
+        await fetchAndCacheAllData(result.cookies, regNo);
 
         return NextResponse.json({ success: true, data: { token, name: result.name || "Student", regNo, expiresIn: 172800 } });
     } catch {

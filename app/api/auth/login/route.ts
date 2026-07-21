@@ -21,9 +21,12 @@ export async function POST(req: NextRequest) {
         const token = uuidv4();
         const regNo = result.regNo || username;
 
+        // ✅ Create session first
         await createSession(token, { regNo, name: result.name || "Student", cookies: result.cookies });
 
-        fetchAndCacheAllData(result.cookies, regNo).catch((err) => { console.error("❌ Background fetch failed:", err.message); });
+        // ✅ Wait for ALL data to be fetched and cached before responding
+        // This ensures dashboard shows everything instantly on first login
+        await fetchAndCacheAllData(result.cookies, regNo);
 
         return NextResponse.json({ success: true, data: { token, name: result.name || "Student", regNo, expiresIn: 172800 } });
     } catch {
