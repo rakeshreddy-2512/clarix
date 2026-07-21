@@ -10,6 +10,7 @@ import { cacheData, getCachedData } from "@/lib/redis";
 import crypto from "crypto";
 
 const SRM_BASE = "https://academia.srmist.edu.in";
+const ATTENDANCE_URL = `${SRM_BASE}/srm_university/academia-academic-services/page/My_Attendance`;
 const TIMETABLE_URL = `${SRM_BASE}/srm_university/academia-academic-services/page/My_Time_Table_2023_24`;
 
 export interface LoginResult {
@@ -43,6 +44,13 @@ function hashData(data: unknown): string {
     return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex");
 }
 
+function secondsUntilMidnight(): number {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    return Math.floor((midnight.getTime() - now.getTime()) / 1000);
+}
+
 function createClient() {
     const jar = new CookieJar();
     const client = wrapper(axios.create({ jar, withCredentials: true }));
@@ -72,22 +80,36 @@ async function fetchHtml(cookie: string, url: string): Promise<string> {
     return res.data;
 }
 
+// ✅ Fetch attendance + timetable in parallel like acadia.works
 export async function fetchAndCacheAllData(cookies: string, regNo: string): Promise<void> {
     try {
         console.log(`📚 Background fetching all data for: ${regNo}`);
-        const timetableHtml = await fetchHtml(cookies, TIMETABLE_URL);
-        if (timetableHtml.length < 500) return;
-        await cacheAll(timetableHtml, regNo);
+
+        const [attendanceHtml, timetableHtml] = await Promise.all([
+            fetchHtml(cookies, ATTENDANCE_URL),
+            fetchHtml(cookies, TIMETABLE_URL),
+        ]);
+
+        console.log(`📄 Attendance: ${attendanceHtml.length} chars, Timetable: ${timetableHtml.length} chars`);
+
+        if (attendanceHtml.length < 500 && timetableHtml.length < 500) {
+            console.log("⚠️ Both responses too small, skipping cache");
+            return;
+        }
+
+        await cacheAll(attendanceHtml, timetableHtml, regNo);
         console.log(`✅ Background cache complete for: ${regNo}`);
     } catch (error: unknown) {
         console.error("❌ fetchAndCacheAllData error:", error instanceof Error ? error.message : error);
     }
 }
 
-async function cacheAll(timetableHtml: string, regNo: string) {
-    const attendance = parseAttendance(timetableHtml);
-    const marks = parseMarks(timetableHtml);
-    const profile = parseProfile(timetableHtml);
+async function cacheAll(attendanceHtml: string, timetableHtml: string, regNo: string) {
+    // ✅ attendance/marks/profile from My_Attendance
+    // ✅ timetable from My_Time_Table_2023_24
+    const attendance = parseAttendance(attendanceHtml);
+    const marks = parseMarks(attendanceHtml);
+    const profile = parseProfile(attendanceHtml);
     const timetable = parseTimetable(timetableHtml);
 
     await Promise.all([
@@ -100,13 +122,6 @@ async function cacheAll(timetableHtml: string, regNo: string) {
         cacheData(`timetable:${regNo}`, timetable, secondsUntilMidnight()),
         cacheData(`timetable:${regNo}:hash`, hashData(timetable), secondsUntilMidnight()),
     ]);
-}
-
-function secondsUntilMidnight(): number {
-    const now = new Date();
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    return Math.floor((midnight.getTime() - now.getTime()) / 1000);
 }
 
 async function addAdditionalCookies(client: AxiosInstance) {
@@ -191,6 +206,7 @@ export async function submitPassword(sessionId: string, username: string, passwo
         const { digest, identifier } = session;
         const xcsrf2 = await getXcsrfToken(jar);
         console.log(`🔐 Submitting password for: ${username}`);
+
         const passRes = await client.request({
             method: "post",
             url: `${SRM_BASE}/accounts/p/10002227248/signin/v2/primary/${identifier}/password?digest=${digest}&cli_time=${Date.now()}&servicename=ZohoCreator&service_language=en&serviceurl=https%3A%2F%2Facademia.srmist.edu.in%2F`,

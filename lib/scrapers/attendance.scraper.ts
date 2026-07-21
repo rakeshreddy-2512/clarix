@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const ATTENDANCE_URL = "https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Time_Table_2023_24";
+// ✅ Correct URL — same as acadia.works
+const ATTENDANCE_URL = "https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Attendance";
 
 export async function scrapeAttendanceAndMarks(cookies: string): Promise<string> {
     console.log("Fetching attendance data...");

@@ -1,12 +1,13 @@
 import axios from "axios";
 
-const TIMETABLE_URL = "https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Time_Table_2023_24";
+// ✅ Correct URL — same as acadia.works (profile is on My_Attendance page)
+const ATTENDANCE_URL = "https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Attendance";
 
 export async function scrapeProfile(cookies: string): Promise<string> {
     console.log("🔄 Fetching profile data...");
     const res = await axios.request({
         method: "get",
-        url: TIMETABLE_URL,
+        url: ATTENDANCE_URL,
         headers: {
             Cookie: cookies,
             "Content-Type": "application/x-www-form-urlencoded",
@@ -17,6 +18,8 @@ export async function scrapeProfile(cookies: string): Promise<string> {
         },
     });
     const html = res.data as string;
-    if (html.length < 500 || html.includes("Error-msg")) throw new Error("Session expired — please login again");
+    if (html.length < 500 || html.includes("Error-msg")) {
+        throw new Error("Session expired — please login again");
+    }
     return html;
 }
