@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ["cheerio", "tough-cookie", "axios-cookiejar-support"],
+  serverExternalPackages: [
+    "axios-cookiejar-support",
+    "tough-cookie",
+    "cheerio",
+    "axios",
+  ],
 };
+
 export default nextConfig;
