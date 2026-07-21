@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { submitPassword, fetchAndCacheAllData } from "@/lib/scrapers/login.scraper";
-import { createSession, redis } from "@/lib/redis";
+import { createSession, redis, getCachedData } from "@/lib/redis";
 
 export async function POST(req: NextRequest) {
     try {
         const { username, password, sessionId } = await req.json();
         if (!username || !password) return NextResponse.json({ success: false, error: "Username and password required" }, { status: 400 });
 
-        // ✅ Rate limiting — prevent double clicks and simultaneous logins
+        // ✅ Rate limiting — 15s lock per username
         const normalizedUsername = username.toLowerCase().trim();
         const lockKey = `login:in_progress:${normalizedUsername}`;
 
@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
             }, { status: 429 });
         }
 
-        // Set lock with 15s TTL
         await redis.set(lockKey, "1", { ex: 15 });
 
         try {
@@ -35,17 +34,36 @@ export async function POST(req: NextRequest) {
             }
 
             const token = uuidv4();
-            const regNo = result.regNo || username;
+            const regNo = result.regNo || username.split("@")[0].toUpperCase();
 
-            await createSession(token, { regNo, name: result.name || "Student", cookies: result.cookies });
+            // ✅ Check if we already have cached profile (repeat login)
+            const cachedProfile = await getCachedData<{ name?: string; regNo?: string }>(`profile:${regNo}`);
+            const displayName = cachedProfile?.name || result.name || username.split("@")[0].toUpperCase();
+            const displayRegNo = cachedProfile?.regNo || regNo;
 
-            // ✅ Wait for ALL data before responding
-            await fetchAndCacheAllData(result.cookies, regNo);
+            await createSession(token, {
+                regNo: displayRegNo,
+                name: displayName,
+                cookies: result.cookies,
+            });
 
-            return NextResponse.json({ success: true, data: { token, name: result.name || "Student", regNo, expiresIn: 172800 } });
+            // ✅ Fire background fetch — don't await
+            // User navigates to dashboard while data loads in background
+            fetchAndCacheAllData(result.cookies, displayRegNo).catch((err) => {
+                console.error("❌ Background fetch failed:", err.message);
+            });
+
+            return NextResponse.json({
+                success: true,
+                data: {
+                    token,
+                    name: displayName,
+                    regNo: displayRegNo,
+                    expiresIn: 172800,
+                },
+            });
 
         } finally {
-            // ✅ Always delete lock when done (success or failure)
             await redis.del(lockKey);
         }
 
