@@ -46,12 +46,13 @@ export function parseAttendance(html: string): AttendanceCourse[] {
 
     $inner("table").each((_, table) => {
         const headerText = $inner(table).find("tr:first-child").text().toLowerCase();
-        const hasAttn = headerText.includes("attn");
-        const hasSlot = headerText.includes("slot");
-        const hasCourse = headerText.includes("course");
-        const hasCategory = headerText.includes("category");
-        const hasFaculty = headerText.includes("faculty");
-        if (hasAttn && hasSlot && hasCourse && hasCategory && hasFaculty) {
+        if (
+            headerText.includes("attn") &&
+            headerText.includes("slot") &&
+            headerText.includes("course") &&
+            headerText.includes("category") &&
+            headerText.includes("faculty")
+        ) {
             attendanceTable = $inner(table);
         }
     });
@@ -64,25 +65,58 @@ export function parseAttendance(html: string): AttendanceCourse[] {
         return courses;
     }
 
+    // Detect column indices from header row — same as acadia.works
+    const headerCells = $inner(attendanceTable).find("tr:first-child td");
+    const keys: string[] = [];
+    headerCells.each((_, cell) => {
+        keys.push($inner(cell).text().trim());
+    });
+
+    const conductedIndex = keys.findIndex(k => k.toLowerCase().includes("hours conducted") || k.toLowerCase().includes("conducted"));
+    const absentIndex = keys.findIndex(k => k.toLowerCase().includes("hours absent") || k.toLowerCase().includes("absent"));
+    const percentageIndex = keys.findIndex(k => k.toLowerCase().includes("attn") || k.toLowerCase().includes("%"));
+
+    console.log(`📊 Column indices — conducted: ${conductedIndex}, absent: ${absentIndex}, percentage: ${percentageIndex}`);
+
     $inner(attendanceTable).find("tr").each((i, row) => {
         if (i === 0) return;
         const cells = $inner(row).find("td");
         if (cells.length < 7) return;
-        const getText = (idx: number) => $inner(cells[idx]).text().trim();
+
+        const getText = (idx: number) => idx >= 0 && cells[idx] ? $inner(cells[idx]).text().trim() : "";
+
         const code = $inner(cells[0]).contents().first().text().trim();
         const title = getText(1);
         const category = getText(2);
         const faculty = getText(3);
         const slot = getText(4);
         const room = getText(5);
-        const percentageText = $inner(cells[6]).find("font").text().trim() || getText(6);
+
+        // Use detected indices if available, fallback to fixed positions
+        const conductedText = conductedIndex >= 0 ? getText(conductedIndex) : "";
+        const absentText = absentIndex >= 0 ? getText(absentIndex) : "";
+        const percentageText = percentageIndex >= 0
+            ? ($inner(cells[percentageIndex]).find("font").text().trim() || getText(percentageIndex))
+            : ($inner(cells[6]).find("font").text().trim() || getText(6));
+
+        const conducted = parseInt(conductedText) || 0;
+        const absent = parseInt(absentText) || 0;
+        const attended = conducted - absent;
         const percentage = parseFloat(percentageText) || 0;
+
         if (!code || !title) return;
+
         courses.push({
             code, title, faculty,
             category: category === "Practical" ? "Practical" : "Theory",
-            slot, room, totalClasses: 0, attended: 0, absent: 0, percentage,
+            slot, room,
+            totalClasses: conducted,
+            attended,
+            absent,
+            percentage,
         });
+
+        console.log(`  ✅ ${code} — ${title} — ${attended}/${conducted} — ${percentage}%`);
     });
 
     console.log(`✅ Total attendance parsed: ${courses.length} courses`);
