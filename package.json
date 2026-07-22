@@ -13,6 +13,7 @@
     "http-cookie-agent": "7.0.3"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
     "@upstash/redis": "^1.38.0",
     "agent-base": "7.1.4",
     "axios": "^1.7.4",
