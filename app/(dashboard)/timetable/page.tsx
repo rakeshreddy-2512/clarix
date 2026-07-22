@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
-import { getTimetableApi } from "@/lib/api";
-import { getProfileApi } from "@/lib/api";
+import { getTimetableApi, getProfileApi } from "@/lib/api";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Header from "@/components/layout/Header";
@@ -23,24 +22,28 @@ interface Student {
     name: string; regNo: string; batch: string; section: string;
 }
 
+const BRIGHT_COLORS: [number, number, number][] = [
+    [255, 87, 51],
+    [52, 168, 83],
+    [66, 133, 244],
+    [156, 39, 176],
+    [234, 67, 53],
+    [0, 172, 193],
+    [255, 152, 0],
+    [76, 175, 80],
+    [233, 30, 99],
+    [103, 58, 183],
+];
+
 function abbreviate(title: string): string {
-    const words = title.split(" ");
+    const words = title.split(" ").filter(w => w.length > 0);
     if (words.length <= 1) return title.substring(0, 3).toUpperCase();
     return words.map(w => w[0]).join("").toUpperCase().substring(0, 3);
 }
 
-function getAllTimeSlots(timetable: Timetable): string[] {
-    const slots = new Set<string>();
-    Object.values(timetable).forEach(daySlots => {
-        daySlots.forEach(slot => slots.add(`${slot.startTime}-${slot.endTime}`));
-    });
-    return Array.from(slots).sort((a, b) => {
-        const toMin = (t: string) => {
-            const [h, m] = t.split(":").map(Number);
-            return (h < 7 ? h + 12 : h) * 60 + m;
-        };
-        return toMin(a.split("-")[0]) - toMin(b.split("-")[0]);
-    });
+function toMinutes(t: string): number {
+    const [h, m] = t.split(":").map(Number);
+    return (h < 7 ? h + 12 : h) * 60 + m;
 }
 
 async function exportTimetablePDF(
@@ -54,170 +57,195 @@ async function exportTimetablePDF(
 
     const pageW = 297;
     const pageH = 210;
-    const margin = 12;
+    const margin = 10;
 
-    // Colors
-    const headerBg: [number, number, number] = [29, 78, 216];
-    const lightBg: [number, number, number] = [239, 246, 255];
-    const borderColor: [number, number, number] = [191, 219, 254];
-    const textDark: [number, number, number] = [15, 23, 42];
-    const textGray: [number, number, number] = [100, 116, 139];
+    // ── Header ───────────────────────────────────────────────────────────────
+    const orange: [number, number, number] = [255, 111, 0];
+    const black: [number, number, number] = [0, 0, 0];
     const white: [number, number, number] = [255, 255, 255];
+    const lightOrange: [number, number, number] = [255, 243, 224];
 
-    // Header section
-    doc.setFillColor(...headerBg);
-    doc.rect(0, 0, pageW, 28, "F");
+    doc.setFillColor(...orange);
+    doc.rect(0, 0, pageW, 22, "F");
 
     doc.setTextColor(...white);
-    doc.setFontSize(18);
+    doc.setFontSize(15);
     doc.setFont("helvetica", "bold");
-    doc.text("CLARIX — Class Timetable", margin, 12);
+    doc.text("CLARIX — Class Timetable", margin, 9);
 
-    doc.setFontSize(9);
+    doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
-    if (profile?.name) doc.text(`Name: ${profile.name}`, margin, 19);
-    if (profile?.regNo) doc.text(`Reg No: ${profile.regNo}`, margin + 70, 19);
-    doc.text(`Batch: ${batch}`, margin + 140, 19);
-    if (section) doc.text(`Section: ${section}`, margin + 170, 19);
-    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, pageW - margin - 40, 19);
+    const parts: string[] = [];
+    if (profile?.name) parts.push(`Name: ${profile.name}`);
+    if (profile?.regNo) parts.push(`Reg No: ${profile.regNo}`);
+    parts.push(`Batch: ${batch}`);
+    if (section) parts.push(`Section: ${section}`);
+    parts.push(`Date: ${new Date().toLocaleDateString("en-IN")}`);
+    doc.text(parts.join("     "), margin, 17);
 
-    // Build abbreviation map
-    const abbrevMap: Record<string, string> = {};
-    const fullFormMap: Record<string, string> = {};
+    // ── Build subject maps ────────────────────────────────────────────────────
+    const subjectColorMap: Record<string, [number, number, number]> = {};
+    const subjectAbbrevMap: Record<string, string> = {};
+    const abbrevFullMap: Record<string, string> = {};
+    let colorIdx = 0;
+
     Object.values(timetable).forEach(daySlots => {
         daySlots.forEach(slot => {
             slot.courses.forEach(course => {
-                if (!abbrevMap[course.title]) {
+                if (!subjectColorMap[course.title]) {
+                    subjectColorMap[course.title] = BRIGHT_COLORS[colorIdx % BRIGHT_COLORS.length];
                     const abbr = abbreviate(course.title);
-                    abbrevMap[course.title] = abbr;
-                    fullFormMap[abbr] = course.title;
+                    subjectAbbrevMap[course.title] = abbr;
+                    abbrevFullMap[abbr] = course.title;
+                    colorIdx++;
                 }
             });
         });
     });
 
-    // Table setup
-    const allTimeSlots = getAllTimeSlots(timetable);
-    const days = [1, 2, 3, 4, 5];
-    const tableTop = 32;
-    const colWidths = {
-        time: 32,
-        day: (pageW - margin * 2 - 32) / 5,
-    };
-    const rowHeight = (pageH - tableTop - 35) / (allTimeSlots.length + 1);
-
-    // Draw table header row
-    let x = margin;
-    doc.setFillColor(...headerBg);
-    doc.rect(x, tableTop, colWidths.time, rowHeight, "F");
-    doc.setTextColor(...white);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("TIME", x + colWidths.time / 2, tableTop + rowHeight / 2 + 1, { align: "center" });
-    x += colWidths.time;
-
-    days.forEach(day => {
-        doc.setFillColor(...headerBg);
-        doc.rect(x, tableTop, colWidths.day, rowHeight, "F");
-        doc.setTextColor(...white);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text(`Day ${day}`, x + colWidths.day / 2, tableTop + rowHeight / 2 + 1, { align: "center" });
-        x += colWidths.day;
+    // ── Collect unique time slots sorted chronologically ──────────────────────
+    const timeSlotSet = new Set<string>();
+    Object.values(timetable).forEach(daySlots => {
+        daySlots.forEach(slot => timeSlotSet.add(`${slot.startTime}-${slot.endTime}`));
     });
 
-    // Draw data rows
-    allTimeSlots.forEach((timeSlot, rowIdx) => {
-        const y = tableTop + (rowIdx + 1) * rowHeight;
-        let x = margin;
+    const allTimeSlots = Array.from(timeSlotSet).sort((a, b) =>
+        toMinutes(a.split("-")[0]) - toMinutes(b.split("-")[0])
+    );
 
-        // Time column
-        doc.setFillColor(...lightBg);
-        doc.rect(x, y, colWidths.time, rowHeight, "F");
-        doc.setDrawColor(...borderColor);
-        doc.rect(x, y, colWidths.time, rowHeight, "S");
-        doc.setTextColor(...textGray);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
-        const [start, end] = timeSlot.split("-");
-        doc.text(start, x + colWidths.time / 2, y + rowHeight / 2 - 1, { align: "center" });
-        doc.text(end, x + colWidths.time / 2, y + rowHeight / 2 + 3, { align: "center" });
-        x += colWidths.time;
+    const days = [1, 2, 3, 4, 5];
 
-        // Day columns
-        days.forEach(day => {
+    // ── Table dimensions ──────────────────────────────────────────────────────
+    const tableTop = 25;
+    const doColW = 12;
+    const timeColW = (pageW - margin * 2 - doColW) / allTimeSlots.length;
+    const totalRows = days.length + 1; // +1 for header
+    const bottomKeyH = 25;
+    const rowH = (pageH - tableTop - bottomKeyH - 5) / totalRows;
+
+    // ── Header row — time slots ───────────────────────────────────────────────
+    // DO cell
+    doc.setFillColor(...orange);
+    doc.setDrawColor(...black);
+    doc.setLineWidth(0.6);
+    doc.rect(margin, tableTop, doColW, rowH, "FD");
+    doc.setTextColor(...white);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text("DO", margin + doColW / 2, tableTop + rowH / 2 + 1, { align: "center" });
+
+    // Time slot header cells
+    allTimeSlots.forEach((slot, i) => {
+        const x = margin + doColW + i * timeColW;
+        const [start, end] = slot.split("-");
+        doc.setFillColor(...orange);
+        doc.setDrawColor(...black);
+        doc.setLineWidth(0.6);
+        doc.rect(x, tableTop, timeColW, rowH, "FD");
+        doc.setTextColor(...white);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.text(start, x + timeColW / 2, tableTop + rowH / 2 - 1, { align: "center" });
+        doc.text(end, x + timeColW / 2, tableTop + rowH / 2 + 3, { align: "center" });
+    });
+
+    // ── Day Order rows ────────────────────────────────────────────────────────
+    days.forEach((day, dayIdx) => {
+        const y = tableTop + (dayIdx + 1) * rowH;
+
+        // DO cell
+        doc.setFillColor(...lightOrange);
+        doc.setDrawColor(...black);
+        doc.setLineWidth(0.6);
+        doc.rect(margin, y, doColW, rowH, "FD");
+        doc.setTextColor(...orange);
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "bold");
+        doc.text(`DO ${day}`, margin + doColW / 2, y + rowH / 2 + 1, { align: "center" });
+
+        // Subject cells
+        allTimeSlots.forEach((slot, i) => {
+            const x = margin + doColW + i * timeColW;
+            const [start, end] = slot.split("-");
             const daySlots = timetable[day] || [];
-            const matchingSlot = daySlots.find(s => `${s.startTime}-${s.endTime}` === timeSlot);
+            const matchingSlot = daySlots.find(s =>
+                s.startTime === start && s.endTime === end
+            );
 
-            // Alternate row colors
-            const rowBg = rowIdx % 2 === 0 ? white : [248, 250, 252] as [number, number, number];
-            doc.setFillColor(...rowBg);
-            doc.rect(x, y, colWidths.day, rowHeight, "F");
-            doc.setDrawColor(...borderColor);
-            doc.rect(x, y, colWidths.day, rowHeight, "S");
+            // Empty white cell with black border
+            doc.setFillColor(...white);
+            doc.setDrawColor(...black);
+            doc.setLineWidth(0.6);
+            doc.rect(x, y, timeColW, rowH, "FD");
 
             if (matchingSlot && matchingSlot.courses.length > 0) {
                 const course = matchingSlot.courses[0];
-                const abbr = abbrevMap[course.title] || course.title.substring(0, 3).toUpperCase();
-                const isPractical = course.type === "Practical";
+                const color = subjectColorMap[course.title] || [100, 100, 100];
+                const abbr = subjectAbbrevMap[course.title] || course.title.substring(0, 3).toUpperCase();
 
-                // Cell background for courses
-                doc.setFillColor(isPractical ? 245 : 239, isPractical ? 243 : 246, isPractical ? 255 : 255);
-                doc.rect(x + 1, y + 1, colWidths.day - 2, rowHeight - 2, "F");
+                // Colored fill inside black border
+                doc.setFillColor(...color);
+                doc.rect(x + 0.8, y + 0.8, timeColW - 1.6, rowH - 1.6, "F");
 
-                doc.setTextColor(...(isPractical ? [124, 58, 237] as [number, number, number] : textDark));
+                // Subject abbreviation
+                doc.setTextColor(...white);
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(9);
-                doc.text(abbr, x + colWidths.day / 2, y + rowHeight / 2 - 1, { align: "center" });
+                doc.setFontSize(8.5);
+                doc.text(abbr, x + timeColW / 2, y + rowH / 2 - 1.5, { align: "center" });
 
+                // Room
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(6);
-                doc.setTextColor(...textGray);
-                doc.text(course.room, x + colWidths.day / 2, y + rowHeight / 2 + 3, { align: "center" });
+                doc.setFontSize(5.5);
+                doc.text(course.room, x + timeColW / 2, y + rowH / 2 + 3, { align: "center" });
             }
-            x += colWidths.day;
         });
     });
 
-    // Full forms at bottom
-    const fullForms = Object.entries(fullFormMap);
-    if (fullForms.length > 0) {
-        const bottomY = pageH - 28;
-        doc.setFillColor(...lightBg);
-        doc.rect(margin, bottomY, pageW - margin * 2, 24, "F");
-        doc.setDrawColor(...borderColor);
-        doc.rect(margin, bottomY, pageW - margin * 2, 24, "S");
+    // ── Subject Key ───────────────────────────────────────────────────────────
+    const keyTop = tableTop + totalRows * rowH + 3;
+    doc.setFillColor(...lightOrange);
+    doc.setDrawColor(...black);
+    doc.setLineWidth(0.4);
+    doc.rect(margin, keyTop, pageW - margin * 2, bottomKeyH - 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(...black);
+    doc.text("SUBJECT KEY:", margin + 3, keyTop + 5);
+
+    const entries = Object.entries(abbrevFullMap);
+    const itemsPerRow = Math.min(entries.length, 5);
+    const colW = (pageW - margin * 2 - 35) / itemsPerRow;
+
+    entries.forEach(([abbr, full], i) => {
+        const col = i % itemsPerRow;
+        const row = Math.floor(i / itemsPerRow);
+        const fx = margin + 35 + col * colW;
+        const fy = keyTop + 5 + row * 7;
+
+        const color = Object.entries(subjectColorMap).find(([title]) =>
+            subjectAbbrevMap[title] === abbr
+        )?.[1] || black;
+
+        // Color dot
+        doc.setFillColor(...color);
+        doc.circle(fx - 3, fy - 1.5, 2, "F");
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
-        doc.setTextColor(...textDark);
-        doc.text("SUBJECT KEY:", margin + 3, bottomY + 5);
+        doc.setTextColor(...black);
+        doc.text(`${abbr}:`, fx, fy);
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(6.5);
-        doc.setTextColor(...textGray);
+        doc.setTextColor(60, 60, 60);
+        doc.text(full, fx + 9, fy);
+    });
 
-        const itemsPerRow = 4;
-        const colW = (pageW - margin * 2 - 30) / itemsPerRow;
-        fullForms.forEach(([abbr, full], i) => {
-            const col = i % itemsPerRow;
-            const row = Math.floor(i / itemsPerRow);
-            const fx = margin + 30 + col * colW;
-            const fy = bottomY + 5 + row * 7;
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(...textDark);
-            doc.text(`${abbr}:`, fx, fy);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(...textGray);
-            doc.text(full, fx + 10, fy);
-        });
-    }
-
-    // Footer
+    // ── Footer ────────────────────────────────────────────────────────────────
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    doc.setTextColor(...textGray);
-    doc.text("Generated by Clarix — SRM Academia Tracker", pageW / 2, pageH - 3, { align: "center" });
+    doc.setFontSize(5.5);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Generated by Clarix — SRM Academia Tracker", pageW / 2, pageH - 1, { align: "center" });
 
     doc.save(`timetable-${profile?.regNo || "clarix"}.pdf`);
 }
@@ -273,11 +301,11 @@ export default function TimetablePage() {
                     style={{
                         display: "flex", alignItems: "center", gap: 6,
                         padding: "8px 16px", borderRadius: 12,
-                        background: exporting ? "#e2e8f0" : "#1d4ed8",
+                        background: exporting ? "#e2e8f0" : "#ff6f00",
                         color: exporting ? "#94a3b8" : "white",
                         border: "none", cursor: exporting ? "not-allowed" : "pointer",
                         fontSize: 13, fontWeight: 600,
-                        boxShadow: exporting ? "none" : "0 2px 8px rgba(29,78,216,0.3)",
+                        boxShadow: exporting ? "none" : "0 2px 8px rgba(255,111,0,0.4)",
                         transition: "all 0.2s",
                         marginTop: 8,
                         whiteSpace: "nowrap",
@@ -310,7 +338,7 @@ export default function TimetablePage() {
                         <button key={day} onClick={() => setSelectedDay(day)} style={{
                             width: 40, height: 40, borderRadius: "50%", fontSize: 14, fontWeight: 600, cursor: "pointer",
                             border: selectedDay === day ? "none" : "1px solid #e2e8f0",
-                            background: selectedDay === day ? "#1d4ed8" : "white",
+                            background: selectedDay === day ? "#ff6f00" : "white",
                             color: selectedDay === day ? "white" : "#0f172a",
                             transition: "all 0.2s",
                         }}>
@@ -333,7 +361,7 @@ export default function TimetablePage() {
                             display: "flex", alignItems: "flex-start", gap: 16,
                         }}>
                             <div style={{ textAlign: "center", minWidth: 56, paddingTop: 2 }}>
-                                <p style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8" }}>{slot.startTime}</p>
+                                <p style={{ fontSize: 12, fontWeight: 700, color: "#ff6f00" }}>{slot.startTime}</p>
                                 <div style={{ width: 1, height: 16, background: "#e2e8f0", margin: "4px auto" }} />
                                 <p style={{ fontSize: 11, color: "#94a3b8" }}>{slot.endTime}</p>
                             </div>
@@ -352,8 +380,8 @@ export default function TimetablePage() {
                                             <div style={{ textAlign: "right" }}>
                                                 <span style={{
                                                     fontSize: 11, padding: "3px 10px", borderRadius: 20, fontWeight: 600,
-                                                    background: course.type === "Practical" || course.type === "Lab Based Theory" ? "#f5f3ff" : "#eff6ff",
-                                                    color: course.type === "Practical" || course.type === "Lab Based Theory" ? "#7c3aed" : "#1d4ed8",
+                                                    background: course.type === "Practical" || course.type === "Lab Based Theory" ? "#f5f3ff" : "#fff3e0",
+                                                    color: course.type === "Practical" || course.type === "Lab Based Theory" ? "#7c3aed" : "#ff6f00",
                                                 }}>
                                                     {course.type === "Lab Based Theory" ? "Lab" : course.type}
                                                 </span>
