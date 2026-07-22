@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getToken } from "@/lib/session";
+import { getToken, updateName } from "@/lib/session";
 
 interface FetchState<T> {
     data: T | null;
@@ -39,6 +39,12 @@ export function useFetchWithCache<T>(
                 data,
                 timestamp: Date.now()
             }));
+
+            // ✅ If this is profile data, update the name in session
+            if (cacheKey === "profile" && data && (data as any).name) {
+                updateName((data as any).name);
+                window.dispatchEvent(new Event("session-updated"));
+            }
         } catch {
             // localStorage might be full
         }
@@ -60,7 +66,6 @@ export function useFetchWithCache<T>(
     };
 
     const refetch = () => {
-        // Clear cache and fetch fresh
         try {
             localStorage.removeItem(getStorageKey());
         } catch { }
@@ -71,18 +76,14 @@ export function useFetchWithCache<T>(
         const cached = getFromCache();
 
         if (cached) {
-            // Show cached data instantly
             setData(cached.data);
             setLoading(false);
 
-            // Check if cache is older than TTL
             const age = Date.now() - cached.timestamp;
             if (age > ttlMs) {
-                // Fetch fresh in background silently
                 fetchFresh(false);
             }
         } else {
-            // No cache — fetch fresh with loading
             fetchFresh(true);
         }
     }, [cacheKey]);

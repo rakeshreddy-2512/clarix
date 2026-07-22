@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { saveSession, getToken, getName, clearSession, isLoggedIn } from "@/lib/session";
 import { loginApi, loginForceTerminateApi, logoutApi, prefetchApi, lookupApi } from "@/lib/api";
@@ -21,6 +21,13 @@ export function useAuth() {
     useEffect(() => {
         setAuthenticated(isLoggedIn());
         setName(getName());
+
+        // ✅ Listen for profile name updates from useFetchWithCache
+        const handleSessionUpdate = () => {
+            setName(getName());
+        };
+        window.addEventListener("session-updated", handleSessionUpdate);
+        return () => window.removeEventListener("session-updated", handleSessionUpdate);
     }, []);
 
     // ─── STEP 1+2: Call when login page loads ────────────────────────────────
@@ -36,7 +43,6 @@ export function useAuth() {
             globalSessionId = sessionId;
             console.log("✅ Prefetch done, sessionId:", sessionId);
         } else {
-            // Reset so it can retry
             globalPrefetchDone = false;
         }
     }
@@ -76,7 +82,6 @@ export function useAuth() {
                 saveSession(result.token, result.name);
                 setAuthenticated(true);
                 setName(result.name);
-                // Reset globals for next login
                 globalPrefetchDone = false;
                 globalSessionId = null;
                 globalLookupDone = false;
@@ -142,7 +147,6 @@ export function useAuth() {
             clearSession();
             setAuthenticated(false);
             setName(null);
-            // Reset globals on logout so next login prefetches fresh
             globalPrefetchDone = false;
             globalSessionId = null;
             globalLookupDone = false;

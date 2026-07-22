@@ -4,10 +4,15 @@ const EXPIRY_KEY = "trackemia_expiry";
 
 export function saveSession(token: string, name: string): void {
     if (typeof window === "undefined") return;
-    const expiry = Date.now() + 2 * 24 * 60 * 60 * 1000; // 2 days
+    const expiry = Date.now() + 2 * 24 * 60 * 60 * 1000;
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(NAME_KEY, name);
     localStorage.setItem(EXPIRY_KEY, expiry.toString());
+}
+
+export function updateName(name: string): void {
+    if (typeof window === "undefined") return;
+    if (name) localStorage.setItem(NAME_KEY, name);
 }
 
 export function getToken(): string | null {
