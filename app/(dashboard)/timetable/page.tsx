@@ -22,9 +22,43 @@ interface Student {
     name: string; regNo: string; batch: string; section: string;
 }
 
-function toMinutes(t: string): number {
-    const [h, m] = t.split(":").map(Number);
-    return (h < 7 ? h + 12 : h) * 60 + m;
+// ✅ 12 Fixed SRM time slots
+const SRM_SLOTS = [
+    { label: "Slot 1",  start: "08:00", end: "08:50" },
+    { label: "Slot 2",  start: "08:50", end: "09:40" },
+    { label: "Slot 3",  start: "09:45", end: "10:35" },
+    { label: "Slot 4",  start: "10:40", end: "11:30" },
+    { label: "Slot 5",  start: "11:35", end: "12:25" },
+    { label: "Slot 6",  start: "12:30", end: "01:20" },
+    { label: "Slot 7",  start: "01:25", end: "02:15" },
+    { label: "Slot 8",  start: "02:20", end: "03:10" },
+    { label: "Slot 9",  start: "03:10", end: "04:00" },
+    { label: "Slot 10", start: "04:00", end: "04:50" },
+    { label: "Slot 11", start: "04:50", end: "05:30" },
+    { label: "Slot 12", start: "05:30", end: "06:10" },
+];
+
+// ✅ Map course start-end time to which SRM slots it covers
+function getCoveredSlots(startTime: string, endTime: string): number[] {
+    const toMin = (t: string) => {
+        const [h, m] = t.split(":").map(Number);
+        return (h < 7 ? h + 12 : h) * 60 + m;
+    };
+
+    const courseStart = toMin(startTime);
+    const courseEnd = toMin(endTime);
+    const covered: number[] = [];
+
+    SRM_SLOTS.forEach((slot, i) => {
+        const slotStart = toMin(slot.start);
+        const slotEnd = toMin(slot.end);
+        // Slot overlaps with course if they share any time
+        if (slotStart < courseEnd && slotEnd > courseStart) {
+            covered.push(i);
+        }
+    });
+
+    return covered;
 }
 
 async function exportTimetablePDF(
@@ -38,30 +72,30 @@ async function exportTimetablePDF(
 
     const pageW = 297;
     const pageH = 210;
-    const margin = 10;
+    const margin = 5;
 
-    // Colors
-    const lightOrange: [number, number, number] = [255, 213, 153]; // light orange for header + time slots
-    const doRowOrange: [number, number, number] = [255, 235, 200]; // very light orange for DO column
+    const lightOrange: [number, number, number] = [255, 213, 153];
+    const doRowOrange: [number, number, number] = [255, 235, 200];
     const black: [number, number, number] = [0, 0, 0];
     const white: [number, number, number] = [255, 255, 255];
     const lightGray: [number, number, number] = [248, 248, 248];
     const darkText: [number, number, number] = [30, 30, 30];
     const orangeText: [number, number, number] = [200, 90, 0];
+    const grayText: [number, number, number] = [100, 100, 100];
 
     // ── Header ───────────────────────────────────────────────────────────────
     doc.setFillColor(...lightOrange);
-    doc.rect(0, 0, pageW, 22, "F");
+    doc.rect(0, 0, pageW, 20, "F");
     doc.setDrawColor(...black);
-    doc.setLineWidth(0.5);
-    doc.rect(0, 0, pageW, 22, "S");
+    doc.setLineWidth(0.4);
+    doc.rect(0, 0, pageW, 20, "S");
 
     doc.setTextColor(...darkText);
-    doc.setFontSize(15);
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text("CLARIX — Class Timetable", margin, 9);
+    doc.text("CLARIX — Class Timetable", margin + 2, 8);
 
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     const parts: string[] = [];
     if (profile?.name) parts.push(`Name: ${profile.name}`);
@@ -69,51 +103,41 @@ async function exportTimetablePDF(
     parts.push(`Batch: ${batch}`);
     if (section) parts.push(`Section: ${section}`);
     parts.push(`Date: ${new Date().toLocaleDateString("en-IN")}`);
-    doc.text(parts.join("     "), margin, 17);
-
-    // ── Collect unique time slots sorted chronologically ──────────────────────
-    const timeSlotSet = new Set<string>();
-    Object.values(timetable).forEach(daySlots => {
-        daySlots.forEach(slot => timeSlotSet.add(`${slot.startTime}-${slot.endTime}`));
-    });
-
-    const allTimeSlots = Array.from(timeSlotSet).sort((a, b) =>
-        toMinutes(a.split("-")[0]) - toMinutes(b.split("-")[0])
-    );
-
-    const days = [1, 2, 3, 4, 5];
+    doc.text(parts.join("     "), margin + 2, 15);
 
     // ── Table dimensions ──────────────────────────────────────────────────────
-    const tableTop = 25;
-    const doColW = 12;
-    const timeColW = (pageW - margin * 2 - doColW) / allTimeSlots.length;
+    const tableTop = 22;
+    const doColW = 10;
+    const slotColW = (pageW - margin * 2 - doColW) / SRM_SLOTS.length;
+    const days = [1, 2, 3, 4, 5];
     const totalRows = days.length + 1;
-    const rowH = (pageH - tableTop - 8) / totalRows;
+    const rowH = (pageH - tableTop - 5) / totalRows;
 
-    // ── Header row — DO + time slots ─────────────────────────────────────────
-    // DO header cell
+    // ── Header row — Slot labels + times ─────────────────────────────────────
+    // DO header
     doc.setFillColor(...lightOrange);
     doc.setDrawColor(...black);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.4);
     doc.rect(margin, tableTop, doColW, rowH, "FD");
     doc.setTextColor(...darkText);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont("helvetica", "bold");
     doc.text("DO", margin + doColW / 2, tableTop + rowH / 2 + 1, { align: "center" });
 
-    // Time slot header cells
-    allTimeSlots.forEach((slot, i) => {
-        const x = margin + doColW + i * timeColW;
-        const [start, end] = slot.split("-");
+    // Slot header cells
+    SRM_SLOTS.forEach((slot, i) => {
+        const x = margin + doColW + i * slotColW;
         doc.setFillColor(...lightOrange);
         doc.setDrawColor(...black);
-        doc.setLineWidth(0.5);
-        doc.rect(x, tableTop, timeColW, rowH, "FD");
+        doc.setLineWidth(0.4);
+        doc.rect(x, tableTop, slotColW, rowH, "FD");
         doc.setTextColor(...darkText);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(6.5);
-        doc.text(start, x + timeColW / 2, tableTop + rowH / 2 - 1, { align: "center" });
-        doc.text(end, x + timeColW / 2, tableTop + rowH / 2 + 3, { align: "center" });
+        doc.setFontSize(5.5);
+        doc.text(slot.label, x + slotColW / 2, tableTop + rowH / 2 - 2, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(5);
+        doc.text(`${slot.start}-${slot.end}`, x + slotColW / 2, tableTop + rowH / 2 + 2, { align: "center" });
     });
 
     // ── Day Order rows ────────────────────────────────────────────────────────
@@ -123,59 +147,81 @@ async function exportTimetablePDF(
         // DO cell
         doc.setFillColor(...doRowOrange);
         doc.setDrawColor(...black);
-        doc.setLineWidth(0.5);
+        doc.setLineWidth(0.4);
         doc.rect(margin, y, doColW, rowH, "FD");
         doc.setTextColor(...orangeText);
-        doc.setFontSize(7.5);
+        doc.setFontSize(6.5);
         doc.setFont("helvetica", "bold");
         doc.text(`DO ${day}`, margin + doColW / 2, y + rowH / 2 + 1, { align: "center" });
 
-        // Subject cells
-        allTimeSlots.forEach((slot, i) => {
-            const x = margin + doColW + i * timeColW;
-            const [start, end] = slot.split("-");
-            const daySlots = timetable[day] || [];
-            const matchingSlot = daySlots.find(s =>
-                s.startTime === start && s.endTime === end
-            );
-
-            // Alternate row background
-            const bg = dayIdx % 2 === 0 ? white : lightGray;
+        // Draw all 12 empty slot cells first
+        const bg = dayIdx % 2 === 0 ? white : lightGray;
+        SRM_SLOTS.forEach((_, i) => {
+            const x = margin + doColW + i * slotColW;
             doc.setFillColor(...bg);
             doc.setDrawColor(...black);
-            doc.setLineWidth(0.5);
-            doc.rect(x, y, timeColW, rowH, "FD");
+            doc.setLineWidth(0.4);
+            doc.rect(x, y, slotColW, rowH, "FD");
+        });
 
-            if (matchingSlot && matchingSlot.courses.length > 0) {
-                const course = matchingSlot.courses[0];
+        // Now draw courses spanning their slots
+        const daySlots = timetable[day] || [];
 
-                // Full subject name with word wrap
-                doc.setTextColor(...darkText);
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(6);
+        // Track which slot indices are already filled
+        const filledSlots = new Set<number>();
 
-                const maxWidth = timeColW - 3;
-                const lines = doc.splitTextToSize(course.title, maxWidth);
-                const lineH = 3.5;
-                const totalTextH = lines.length * lineH;
-                const startY = y + (rowH - totalTextH) / 2 + lineH * 0.8;
+        daySlots.forEach(slot => {
+            if (!slot.courses.length) return;
+            const course = slot.courses[0];
+            const coveredIndices = getCoveredSlots(slot.startTime, slot.endTime);
 
-                lines.forEach((line: string, li: number) => {
-                    doc.text(line, x + timeColW / 2, startY + li * lineH, { align: "center" });
-                });
+            if (coveredIndices.length === 0) return;
 
-                // Room below title
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(5);
-                doc.setTextColor(100, 100, 100);
-                doc.text(course.room, x + timeColW / 2, y + rowH - 2.5, { align: "center" });
-            }
+            // Skip already filled slots
+            if (coveredIndices.some(i => filledSlots.has(i))) return;
+            coveredIndices.forEach(i => filledSlots.add(i));
+
+            // Calculate merged cell position and width
+            const firstIdx = coveredIndices[0];
+            const lastIdx = coveredIndices[coveredIndices.length - 1];
+            const cellX = margin + doColW + firstIdx * slotColW;
+            const cellW = (lastIdx - firstIdx + 1) * slotColW;
+
+            // Draw merged cell with light background
+            doc.setFillColor(...bg);
+            doc.setDrawColor(...black);
+            doc.setLineWidth(0.4);
+            doc.rect(cellX, y, cellW, rowH, "FD");
+
+            // Draw inner content background
+            doc.setFillColor(245, 245, 245);
+            doc.rect(cellX + 0.5, y + 0.5, cellW - 1, rowH - 1, "F");
+
+            // Subject name with word wrap
+            doc.setTextColor(...darkText);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(5.5);
+            const maxWidth = cellW - 3;
+            const lines = doc.splitTextToSize(course.title, maxWidth);
+            const lineH = 3;
+            const totalTextH = lines.length * lineH;
+            const startY = y + (rowH - totalTextH) / 2 - 1;
+
+            lines.forEach((line: string, li: number) => {
+                doc.text(line, cellX + cellW / 2, startY + li * lineH, { align: "center" });
+            });
+
+            // ✅ Room number — increased font size
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7); // ← increased from 5
+            doc.setTextColor(...grayText);
+            doc.text(course.room, cellX + cellW / 2, y + rowH - 2.5, { align: "center" });
         });
     });
 
     // ── Footer ────────────────────────────────────────────────────────────────
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
+    doc.setFontSize(5);
     doc.setTextColor(150, 150, 150);
     doc.text("Generated by Clarix — SRM Academia Tracker", pageW / 2, pageH - 1, { align: "center" });
 
