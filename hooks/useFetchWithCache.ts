@@ -9,6 +9,9 @@ interface FetchState<T> {
     refetch: () => void;
 }
 
+// ✅ Increment this when parsers/scrapers change to invalidate old cache
+const CACHE_VERSION = "v2";
+
 export function useFetchWithCache<T>(
     fetchFn: () => Promise<T>,
     cacheKey: string,
@@ -20,7 +23,7 @@ export function useFetchWithCache<T>(
 
     const getStorageKey = () => {
         const token = getToken();
-        return `clarix_${cacheKey}_${token}`;
+        return `clarix_${CACHE_VERSION}_${cacheKey}_${token}`;
     };
 
     const getFromCache = (): { data: T; timestamp: number } | null => {
