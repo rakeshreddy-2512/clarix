@@ -8,9 +8,11 @@ export default function ClarixLogo() {
 
     // ✅ Use document.fonts.ready — font is self-hosted so always available
     useEffect(() => {
-        document.fonts.ready.then(() => {
+        const checkFont = async () => {
+            await document.fonts.load("700 48px 'Dancing Script'");
             setFontReady(true);
-        });
+        };
+        checkFont();
     }, []);
 
     useEffect(() => {
