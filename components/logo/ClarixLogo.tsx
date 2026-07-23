@@ -6,19 +6,10 @@ export default function ClarixLogo() {
     const boxRef = useRef<HTMLDivElement>(null);
     const [fontReady, setFontReady] = useState(false);
 
+    // ✅ Use document.fonts.ready — font is self-hosted so always available
     useEffect(() => {
-        const font = new FontFace(
-            "Dancing Script",
-            "url(https://fonts.gstatic.com/s/dancingscript/v25/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7BMSo3Sup6hNX6plRP.woff2)",
-            { weight: "700" }
-        );
-        font.load().then((loadedFont) => {
-            document.fonts.add(loadedFont);
+        document.fonts.ready.then(() => {
             setFontReady(true);
-        }).catch(() => {
-            document.fonts.load("700 48px 'Dancing Script'").then(() => {
-                setFontReady(true);
-            });
         });
     }, []);
 
@@ -48,7 +39,6 @@ export default function ClarixLogo() {
 
         const shooting: any[] = [];
 
-        // ✅ Strictly max 2 shooting stars at a time
         const spawnShooting = () => {
             const active = shooting.filter(s => s.alpha > 0).length;
             if (active >= 2) return;
@@ -133,6 +123,19 @@ export default function ClarixLogo() {
         };
     }, []);
 
+    // ✅ Show black box until font is ready
+    if (!fontReady) {
+        return (
+            <div style={{
+                width: 220,
+                height: 90,
+                borderRadius: 20,
+                background: "#000000",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            }} />
+        );
+    }
+
     return (
         <div
             ref={boxRef}
@@ -158,7 +161,7 @@ export default function ClarixLogo() {
                 }}
             />
             <div style={{ position: "relative", zIndex: 2, display: "flex" }}>
-                {fontReady && "Clarix".split("").map((letter, i) => (
+                {"Clarix".split("").map((letter, i) => (
                     <span
                         key={i}
                         style={{

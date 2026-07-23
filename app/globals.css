@@ -54,3 +54,10 @@ body {
 .blue-glow {
     box-shadow: 0 0 20px rgba(37, 99, 235, 0.3), 0 4px 16px rgba(37, 99, 235, 0.2);
 }
+@font-face {
+  font-display: block;
+  font-family: 'Dancing Script';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/dancing-script-v29-latin-700.woff2') format('woff2');
+}
