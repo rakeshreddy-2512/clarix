@@ -79,7 +79,7 @@ export default function ProfilePage() {
             const token = getToken();
             const newSettings = { ...notifSettings, ...updated };
 
-            // ✅ If turning OFF — clear telegram_chat_id locally and in Supabase
+            // ✅ If turning OFF — clear telegram_chat_id
             if (updated.notifications_on === false) {
                 newSettings.telegram_chat_id = null;
             }
@@ -97,6 +97,19 @@ export default function ProfilePage() {
             console.error("Failed to save settings");
         } finally {
             setSaving(false);
+        }
+    }
+
+    function handleToggle() {
+        if (notifSettings?.notifications_on) {
+            // ✅ Show confirmation before turning off
+            if (window.confirm(
+                "⚠️ Turning off will disconnect your Telegram completely.\n\nTo enable reminders again, you'll need to reconnect Telegram from scratch.\n\nAre you sure you want to turn off?"
+            )) {
+                saveSettings({ notifications_on: false });
+            }
+        } else {
+            saveSettings({ notifications_on: true });
         }
     }
 
@@ -170,7 +183,7 @@ export default function ProfilePage() {
 
                         {/* Toggle switch */}
                         <button
-                            onClick={() => saveSettings({ notifications_on: !notifSettings?.notifications_on })}
+                            onClick={handleToggle}
                             disabled={saving}
                             style={{
                                 width: 48, height: 26, borderRadius: 13,
@@ -230,7 +243,7 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-                            {/* Reminder timing options — only show if Telegram connected */}
+                            {/* Reminder timing options */}
                             {notifSettings?.telegram_chat_id && (
                                 <div>
                                     <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -273,7 +286,7 @@ export default function ProfilePage() {
 
                             <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 14, lineHeight: 1.6 }}>
                                 {notifSettings?.telegram_chat_id
-                                    ? "Toggle off to disconnect Telegram and stop reminders."
+                                    ? "Toggle off to disconnect Telegram and stop all reminders."
                                     : "Connect Telegram first to enable class reminders."
                                 }
                             </p>
