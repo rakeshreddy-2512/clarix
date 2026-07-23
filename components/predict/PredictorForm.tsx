@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AttendanceCourse } from "@/utils/types";
@@ -87,7 +86,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
     );
 
     const plannerMap = plannerData?.map || {};
-
     const isAllSubjects = selectedCourse === "ALL";
     const course = courses.find((c) => c.code === selectedCourse);
     const result = usePredictor(
@@ -104,7 +102,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             const from = new Date(fromDate);
             const to = new Date(toDate);
             if (from > to) return null;
-
             const futureClasses = countFutureClasses(
                 c.slot || "",
                 fromDate,
@@ -113,7 +110,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 c.category,
                 batch
             );
-
             const futureTotal = c.totalClasses + futureClasses;
             const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
             const futurePercentage = futureTotal > 0
@@ -266,7 +262,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                         </p>
                         {allSubjectsResults.map((item, i) => {
                             if (!item) return null;
-                            const { course: c, futurePercentage, delta, futureClasses } = item;
+                            const { course: c, futurePercentage, delta } = item;
                             const isExcellent = futurePercentage > 75;
                             const isWarning = futurePercentage === 75;
                             const resultColor = isExcellent ? "#16a34a" : isWarning ? "#d97706" : "#dc2626";
@@ -281,38 +277,51 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.04 }}
                                     style={{
-                                        padding: "14px 16px", borderRadius: 16,
+                                        padding: "16px", borderRadius: 16,
                                         background: "#ffffff",
                                         border: `1px solid ${resultBorder}`,
-                                        display: "flex", alignItems: "center",
-                                        justifyContent: "space-between",
                                         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                                        display: "flex", flexDirection: "column", gap: 12,
                                     }}
                                 >
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>
+                                    {/* Course name and code */}
+                                    <div>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
                                             {c.title}
                                         </p>
-                                        <p style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>
-                                            {c.code} • {c.category} • {futureClasses} classes
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>
+                                            {c.code} • {c.category}
                                         </p>
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8" }}>
-                                            {c.percentage}% →
-                                        </span>
-                                        <span style={{ fontSize: 20, fontWeight: 800, color: resultColor }}>
-                                            {futurePercentage}%
-                                        </span>
-                                        <span style={{
-                                            fontSize: 11, fontWeight: 700,
-                                            padding: "3px 8px", borderRadius: 8,
-                                            background: resultBg,
-                                            color: resultColor,
-                                            border: `1px solid ${resultBorder}`,
+
+                                    {/* Current → Predicted → Delta */}
+                                    <div style={{
+                                        padding: "12px 14px", borderRadius: 12,
+                                        background: "#f8fafc", border: "1px solid #e2e8f0",
+                                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    }}>
+                                        <div style={{ textAlign: "center" }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
+                                            <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{c.percentage}%</p>
+                                        </div>
+
+                                        <div style={{ fontSize: 20, color: "#94a3b8" }}>→</div>
+
+                                        <div style={{ textAlign: "center" }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
+                                            <p style={{ fontSize: 24, fontWeight: 800, color: resultColor }}>{futurePercentage}%</p>
+                                        </div>
+
+                                        <div style={{
+                                            padding: "6px 12px", borderRadius: 10,
+                                            background: resultBg, border: `1px solid ${resultBorder}`,
+                                            textAlign: "center",
                                         }}>
-                                            {isPositive ? "+" : ""}{delta}%
-                                        </span>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
+                                            <p style={{ fontSize: 16, fontWeight: 800, color: resultColor }}>
+                                                {isPositive ? "+" : ""}{delta}%
+                                            </p>
+                                        </div>
                                     </div>
                                 </motion.div>
                             );
