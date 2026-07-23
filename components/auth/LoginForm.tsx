@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import ClarixLogo from "@/components/logo/ClarixLogo";
 
 const LOADING_STEPS = [
     "Connecting to SRM Academia...",
@@ -118,14 +119,8 @@ function LoadingOverlay() {
             <motion.div
                 animate={{ scale: [1, 1.08, 1] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                style={{
-                    width: 80, height: 80, borderRadius: 24,
-                    background: "#000",
-                    boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                }}
             >
-                <span className="clarix-logo-loading">C</span>
+                <ClarixLogo />
             </motion.div>
 
             <div style={{ position: "relative", width: 56, height: 56 }}>
@@ -176,192 +171,6 @@ function LoadingOverlay() {
     );
 }
 
-// ✅ Animated Cosmic Cursive Logo
-function ClarixLogo() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const boxRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const box = boxRef.current;
-        if (!canvas || !box) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        canvas.width = box.offsetWidth;
-        canvas.height = box.offsetHeight;
-        const W = canvas.width;
-        const H = canvas.height;
-
-        // Stars
-        const stars: any[] = [];
-        for (let i = 0; i < 100; i++) {
-            stars.push({
-                x: Math.random() * W, y: Math.random() * H,
-                r: Math.random() * 1.1 + 0.2,
-                alpha: Math.random(),
-                speed: Math.random() * 0.012 + 0.003,
-                dir: Math.random() > 0.5 ? 1 : -1,
-            });
-        }
-
-        // Shooting stars
-        const shooting: any[] = [];
-        const spawnShooting = () => {
-            shooting.push({
-                x: W * 0.6 + Math.random() * W * 0.5,
-                y: Math.random() * H * 0.4,
-                speed: Math.random() * 2.5 + 2,
-                alpha: 1,
-                tail: [],
-                len: Math.random() * 50 + 40,
-                width: Math.random() * 0.8 + 0.5,
-                color: Math.random() > 0.5 ? "200,220,255" : "255,240,200",
-            });
-        };
-        spawnShooting();
-        spawnShooting();
-        const shootInterval = setInterval(spawnShooting, 1800);
-
-        // Offscreen text
-        const offscreen = document.createElement("canvas");
-        offscreen.width = W;
-        offscreen.height = H;
-        const oc = offscreen.getContext("2d")!;
-        let textReady = false;
-        let startTime: number | null = null;
-        const REVEAL_DURATION = 3000;
-
-        document.fonts.ready.then(() => {
-            oc.font = `700 ${W < 200 ? 36 : 42}px 'Dancing Script', cursive`;
-            oc.fillStyle = "#ffffff";
-            oc.textAlign = "center";
-            oc.textBaseline = "middle";
-            oc.fillText("Clarix", W / 2, H / 2);
-            textReady = true;
-            setTimeout(() => { startTime = performance.now(); }, 300);
-        });
-
-        let animId: number;
-        const draw = (now: number) => {
-            ctx.clearRect(0, 0, W, H);
-
-            // Twinkling stars
-            stars.forEach(s => {
-                s.alpha += s.speed * s.dir;
-                if (s.alpha >= 1) s.dir = -1;
-                if (s.alpha <= 0.05) s.dir = 1;
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
-                ctx.fill();
-                if (s.r > 0.85 && s.alpha > 0.55) {
-                    ctx.strokeStyle = `rgba(255,255,255,${s.alpha * 0.35})`;
-                    ctx.lineWidth = 0.3;
-                    ctx.beginPath();
-                    ctx.moveTo(s.x - s.r * 3, s.y); ctx.lineTo(s.x + s.r * 3, s.y);
-                    ctx.moveTo(s.x, s.y - s.r * 3); ctx.lineTo(s.x, s.y + s.r * 3);
-                    ctx.stroke();
-                }
-            });
-
-            // Shooting stars
-            for (let i = shooting.length - 1; i >= 0; i--) {
-                const s = shooting[i];
-                s.x -= s.speed * 1.2;
-                s.y += s.speed * 0.8;
-                s.tail.push({ x: s.x, y: s.y });
-                if (s.tail.length > s.len) s.tail.shift();
-                s.alpha -= 0.008;
-                if (s.tail.length > 1) {
-                    for (let j = 1; j < s.tail.length; j++) {
-                        const t = j / s.tail.length;
-                        ctx.beginPath();
-                        ctx.moveTo(s.tail[j - 1].x, s.tail[j - 1].y);
-                        ctx.lineTo(s.tail[j].x, s.tail[j].y);
-                        ctx.strokeStyle = `rgba(${s.color},${t * s.alpha})`;
-                        ctx.lineWidth = t * s.width * 1.5;
-                        ctx.stroke();
-                    }
-                    const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 4);
-                    g.addColorStop(0, `rgba(255,255,255,${s.alpha})`);
-                    g.addColorStop(1, `rgba(${s.color},0)`);
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = g;
-                    ctx.fill();
-                }
-                if (s.alpha <= 0 || s.x < -60 || s.y > H + 60) shooting.splice(i, 1);
-            }
-
-            // Handwriting reveal
-            if (textReady && startTime !== null) {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / REVEAL_DURATION, 1);
-                const eased = progress < 0.5
-                    ? 2 * progress * progress
-                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                const revealX = eased * W;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(0, 0, revealX, H);
-                ctx.clip();
-                ctx.drawImage(offscreen, 0, 0);
-                ctx.restore();
-
-                if (progress < 1) {
-                    const penX = revealX;
-                    const penY = H / 2;
-                    const glow = ctx.createRadialGradient(penX, penY, 0, penX, penY, 14);
-                    glow.addColorStop(0, `rgba(200,220,255,0.7)`);
-                    glow.addColorStop(0.4, `rgba(150,180,255,0.3)`);
-                    glow.addColorStop(1, `rgba(100,150,255,0)`);
-                    ctx.beginPath();
-                    ctx.arc(penX, penY, 14, 0, Math.PI * 2);
-                    ctx.fillStyle = glow;
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.arc(penX, penY, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255,255,255,0.95)`;
-                    ctx.fill();
-                }
-            }
-
-            animId = requestAnimationFrame(draw);
-        };
-
-        animId = requestAnimationFrame(draw);
-        return () => {
-            cancelAnimationFrame(animId);
-            clearInterval(shootInterval);
-        };
-    }, []);
-
-    return (
-        <div
-            ref={boxRef}
-            style={{
-                position: "relative",
-                width: 200,
-                height: 80,
-                borderRadius: 20,
-                background: "#000000",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}
-        >
-            <canvas
-                ref={canvasRef}
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-            />
-        </div>
-    );
-}
-
 export default function LoginForm() {
     const { login, loginWithForceTerminate, cancelSessionExceeded, prefetch, lookup, loading, error, sessionExceeded } = useAuth();
     const [username, setUsername] = useState("");
@@ -380,10 +189,7 @@ export default function LoginForm() {
     return (
         <>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-                @keyframes float-logo { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .clarix-logo-loading { font-family: 'Dancing Script', cursive; font-size: 42px; font-weight: 700; color: #fff; animation: float-logo 2.5s ease-in-out infinite; line-height: 1; display: inline-block; }
                 input::placeholder { color: #94a3b8; }
             `}</style>
 
@@ -407,7 +213,7 @@ export default function LoginForm() {
                 alignItems: "center", justifyContent: "center",
                 padding: 24,
             }}>
-                {/* ✅ New Animated Cosmic Cursive Logo */}
+                {/* ✅ Animated Cosmic Cursive Logo */}
                 <motion.div
                     initial={{ opacity: 0, y: -24 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -443,7 +249,6 @@ export default function LoginForm() {
                     </p>
 
                     <form onSubmit={handleSubmit}>
-                        {/* Email */}
                         <div style={{ marginBottom: 16 }}>
                             <label style={{
                                 display: "block", fontSize: 11, fontWeight: 700,
@@ -483,7 +288,6 @@ export default function LoginForm() {
                             </div>
                         </div>
 
-                        {/* Password */}
                         <div style={{ marginBottom: 24 }}>
                             <label style={{
                                 display: "block", fontSize: 11, fontWeight: 700,
@@ -537,7 +341,6 @@ export default function LoginForm() {
                             </div>
                         </div>
 
-                        {/* Error */}
                         {error && (
                             <motion.div
                                 initial={{ opacity: 0, y: -8 }}
@@ -553,7 +356,6 @@ export default function LoginForm() {
                             </motion.div>
                         )}
 
-                        {/* Submit */}
                         <motion.button
                             type="submit"
                             disabled={loading || !username || !password}
