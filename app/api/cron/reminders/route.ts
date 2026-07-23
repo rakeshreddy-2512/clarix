@@ -11,28 +11,32 @@ async function sendTelegramMessage(chatId: number, text: string) {
     });
 }
 
-function getCurrentDayOrder(timetableJson: any): number {
-    // Get today's day order from planner if available
-    // For now use a simple weekday mapping
-    const day = new Date().getDay();
-    const dayOrderMap: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
-    return dayOrderMap[day] || 1;
-}
-
 function timeToMinutes(time: string): number {
     const [h, m] = time.split(":").map(Number);
     return (h < 7 ? h + 12 : h) * 60 + m;
 }
 
+function getTodayIST(): string {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    return istNow.toISOString().split("T")[0];
+}
+
+function getCurrentISTMinutes(): number {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    return istNow.getHours() * 60 + istNow.getMinutes();
+}
+
 export async function GET(req: NextRequest) {
-    // Verify cron secret to prevent unauthorized calls
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
-        // Get all users with notifications enabled and telegram connected
         const { data: users, error } = await supabase
             .from("user_notifications")
             .select("*")
@@ -41,7 +45,6 @@ export async function GET(req: NextRequest) {
             .not("timetable_json", "is", null);
 
         if (error) {
-            console.error("Supabase error:", error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
@@ -49,21 +52,29 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, message: "No users to notify" });
         }
 
-        const now = new Date();
-        // Convert to IST (UTC+5:30)
-        const istOffset = 5.5 * 60 * 60 * 1000;
-        const istNow = new Date(now.getTime() + istOffset);
-        const currentMinutes = istNow.getHours() * 60 + istNow.getMinutes();
-
+        const today = getTodayIST();
+        const currentMinutes = getCurrentISTMinutes();
         let remindersSent = 0;
 
         for (const user of users) {
             try {
                 const timetable = user.timetable_json?.timetable;
-                if (!timetable) continue;
+                const plannerMap = user.timetable_json?.plannerMap;
 
-                const dayOrder = getCurrentDayOrder(user.timetable_json);
+                if (!timetable || !plannerMap) continue;
+
+                // ✅ Get today's day order from plannerMap
+                const todayPlanner = plannerMap[today];
+                if (!todayPlanner || !todayPlanner.dayOrder) {
+                    console.log(`⏭️ ${user.reg_number} — no classes today (${today}) holiday or weekend`);
+                    continue;
+                }
+
+                const dayOrder = todayPlanner.dayOrder;
+                console.log(`📅 ${user.reg_number} — today is DO ${dayOrder}`);
+
                 const daySlots = timetable[dayOrder] || [];
+                if (daySlots.length === 0) continue;
 
                 for (const slot of daySlots) {
                     const classMinutes = timeToMinutes(slot.startTime);
@@ -95,6 +106,7 @@ export async function GET(req: NextRequest) {
 
                             await sendTelegramMessage(user.telegram_chat_id, message);
                             remindersSent++;
+                            console.log(`✅ Reminder sent to ${user.reg_number} for ${course.title}`);
                         }
                     }
                 }
@@ -103,7 +115,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        return NextResponse.json({ success: true, remindersSent });
+        return NextResponse.json({ success: true, remindersSent, date: today, currentMinutes });
     } catch (error) {
         console.error("Cron error:", error);
         return NextResponse.json({ error: "Cron failed" }, { status: 500 });

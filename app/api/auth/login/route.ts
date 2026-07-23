@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { submitPassword, fetchAndCacheAllData } from "@/lib/scrapers/login.scraper";
 import { createSession, redis, getCachedData } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
+import { encrypt } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
     try {
         const { username, password, sessionId } = await req.json();
         if (!username || !password) return NextResponse.json({ success: false, error: "Username and password required" }, { status: 400 });
 
-        // ✅ Rate limiting — 15s lock per username
         const normalizedUsername = username.toLowerCase().trim();
         const lockKey = `login:in_progress:${normalizedUsername}`;
 
@@ -36,7 +37,6 @@ export async function POST(req: NextRequest) {
             const token = uuidv4();
             const regNo = result.regNo || username.split("@")[0].toUpperCase();
 
-            // ✅ Check if we already have cached profile (repeat login)
             const cachedProfile = await getCachedData<{ name?: string; regNo?: string }>(`profile:${regNo}`);
             const displayName = cachedProfile?.name || result.name || username.split("@")[0].toUpperCase();
             const displayRegNo = cachedProfile?.regNo || regNo;
@@ -47,10 +47,24 @@ export async function POST(req: NextRequest) {
                 cookies: result.cookies,
             });
 
-            // ✅ Fire background fetch — don't await
-            // User navigates to dashboard while data loads in background
-            fetchAndCacheAllData(result.cookies, displayRegNo).catch((err) => {
-                console.error("❌ Background fetch failed:", err.message);
+            // ✅ Save encrypted cookies to Supabase for midnight planner cron
+            const encryptedCookies = encrypt(result.cookies);
+            (async () => {
+                try {
+                    await supabase.from("service_cookies").upsert({
+                        id: 1,
+                        cookies_encrypted: encryptedCookies,
+                        updated_at: new Date().toISOString(),
+                    });
+                    console.log("✅ Cookies saved to Supabase");
+                } catch (err: unknown) {
+                    console.error("❌ Failed to save cookies to Supabase:", err);
+                }
+            })();
+
+            // ✅ Fire background fetch
+            fetchAndCacheAllData(result.cookies, displayRegNo).catch((err: unknown) => {
+                console.error("❌ Background fetch failed:", err instanceof Error ? err.message : err);
             });
 
             return NextResponse.json({
