@@ -1,19 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function ClarixLogo() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const boxRef = useRef<HTMLDivElement>(null);
-    const [fontReady, setFontReady] = useState(false);
-
-    // ✅ Use document.fonts.ready — font is self-hosted so always available
-    useEffect(() => {
-        const checkFont = async () => {
-            await document.fonts.load("700 48px 'Dancing Script'");
-            setFontReady(true);
-        };
-        checkFont();
-    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -125,19 +115,6 @@ export default function ClarixLogo() {
         };
     }, []);
 
-    // ✅ Show black box until font is ready
-    if (!fontReady) {
-        return (
-            <div style={{
-                width: 220,
-                height: 90,
-                borderRadius: 20,
-                background: "#000000",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }} />
-        );
-    }
-
     return (
         <div
             ref={boxRef}
@@ -162,6 +139,7 @@ export default function ClarixLogo() {
                     width: "100%", height: "100%",
                 }}
             />
+            {/* ✅ Always render letters — font-display:block handles waiting */}
             <div style={{ position: "relative", zIndex: 2, display: "flex" }}>
                 {"Clarix".split("").map((letter, i) => (
                     <span
@@ -183,6 +161,13 @@ export default function ClarixLogo() {
                 ))}
             </div>
             <style>{`
+                @font-face {
+                    font-display: block;
+                    font-family: 'Dancing Script';
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url('/fonts/dancing-script-v29-latin-700.woff2') format('woff2');
+                }
                 @keyframes letterAppear {
                     0% { opacity: 0; transform: translateY(10px); }
                     60% { opacity: 1; transform: translateY(-2px); }
