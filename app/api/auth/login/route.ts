@@ -15,11 +15,12 @@ export async function POST(req: NextRequest) {
 
         const existing = await redis.get(lockKey);
         if (existing) {
+            const ttl = await redis.ttl(lockKey);
             return NextResponse.json({
                 success: false,
-                error: "Login already in progress. Please wait a moment and try again.",
+                error: `Login already in progress. Please wait ${ttl} seconds and try again.`,
             }, { status: 429 });
-        }
+        }   
 
         await redis.set(lockKey, "1", { ex: 15 });
 
