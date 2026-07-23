@@ -18,6 +18,9 @@ export const metadata: Metadata = {
         siteName: "Clarix",
         type: "website",
     },
+    verification: {
+        google: "8_XIrzvoWw_-JG-OJ7G3TMrOyLg0ovrhlENJ9WeX4jo",
+    },
 };
 
 export const viewport: Viewport = {
