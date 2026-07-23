@@ -18,22 +18,33 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `attendance:${regNo}`;
         const hashKey = `attendance:${regNo}:hash`;
-        const TTL = 120; // 2 minutes — aggressive refresh after class
-        const cached = await getCachedData(cacheKey);
+        const TTL = 120;
 
+        const cached = await getCachedData(cacheKey);
         if (cached) {
             (async () => {
                 try {
                     const html = await scrapeAttendanceAndMarks(cookies);
                     const freshAttendance = parseAttendance(html);
+
+                    // ✅ Never overwrite cache with empty data
+                    if (freshAttendance.length === 0) {
+                        console.log("⚠️ Fresh attendance is empty — keeping cached data");
+                        return;
+                    }
+
                     const freshHash = hashData(freshAttendance);
                     const cachedHash = await getCachedData<string>(hashKey);
                     if (freshHash !== cachedHash) {
                         await cacheData(cacheKey, freshAttendance, TTL);
                         await cacheData(hashKey, freshHash, TTL);
                         const freshMarks = parseMarks(html);
-                        await cacheData(`marks:${regNo}`, freshMarks, TTL);
-                        await cacheData(`marks:${regNo}:hash`, hashData(freshMarks), TTL);
+
+                        // ✅ Never overwrite marks cache with empty data
+                        if (freshMarks.length > 0) {
+                            await cacheData(`marks:${regNo}`, freshMarks, TTL);
+                            await cacheData(`marks:${regNo}:hash`, hashData(freshMarks), TTL);
+                        }
                     }
                 } catch (err) { console.error(`Background attendance sync failed:`, err); }
             })();
@@ -44,8 +55,13 @@ export async function GET(req: NextRequest) {
             const html = await scrapeAttendanceAndMarks(cookies);
             const attendance = parseAttendance(html);
             const hash = hashData(attendance);
-            await cacheData(cacheKey, attendance, TTL);
-            await cacheData(hashKey, hash, TTL);
+
+            // ✅ Only cache if data is not empty
+            if (attendance.length > 0) {
+                await cacheData(cacheKey, attendance, TTL);
+                await cacheData(hashKey, hash, TTL);
+            }
+
             return NextResponse.json({ success: true, data: attendance, source: "fresh" });
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Attendance temporarily unavailable" });
