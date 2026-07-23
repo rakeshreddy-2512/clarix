@@ -60,7 +60,17 @@ export default function ProfilePage() {
                 setNotifLoading(false);
             }
         }
+
         fetchSettings();
+
+        // ✅ Re-fetch when user comes back to tab after connecting Telegram
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                fetchSettings();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
     }, []);
 
     async function saveSettings(updated: Partial<NotificationSettings>) {
@@ -68,6 +78,12 @@ export default function ProfilePage() {
         try {
             const token = getToken();
             const newSettings = { ...notifSettings, ...updated };
+
+            // ✅ If turning OFF — clear telegram_chat_id locally and in Supabase
+            if (updated.notifications_on === false) {
+                newSettings.telegram_chat_id = null;
+            }
+
             await fetch("/api/notifications", {
                 method: "POST",
                 headers: {
@@ -174,90 +190,95 @@ export default function ProfilePage() {
                         </button>
                     </div>
 
-                    {/* Telegram connection status */}
-                    {notifSettings?.telegram_chat_id ? (
-                        <div style={{
-                            padding: "10px 14px", borderRadius: 12,
-                            background: "#f0fdf4", border: "1px solid #86efac",
-                            display: "flex", alignItems: "center", gap: 8,
-                            marginBottom: 16,
-                        }}>
-                            <span style={{ fontSize: 16 }}>✅</span>
-                            <p style={{ fontSize: 13, color: "#15803d", fontWeight: 600 }}>
-                                Telegram connected
-                            </p>
-                        </div>
-                    ) : (
-                        <div style={{ marginBottom: 16 }}>
-                            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10 }}>
-                                Connect your Telegram to receive class reminders.
-                            </p>
-                            {telegramLink && (
-                                <button
-                                    onClick={() => window.open(telegramLink, "_blank")}
-                                    style={{
-                                        display: "inline-flex", alignItems: "center", gap: 6,
-                                        padding: "10px 16px", borderRadius: 12,
-                                        background: "#0088cc", color: "white",
-                                        fontSize: 13, fontWeight: 700,
-                                        border: "none", cursor: "pointer",
-                                        boxShadow: "0 2px 8px rgba(0,136,204,0.3)",
-                                    }}
-                                >
-                                    <ExternalLink size={14} />
-                                    Connect Telegram
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Reminder timing options */}
-                    {notifSettings?.notifications_on && notifSettings?.telegram_chat_id && (
-                        <div>
-                            <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                Remind me before class
-                            </p>
-                            {[
-                                { key: "remind_1hr", label: "1 hour before" },
-                                { key: "remind_30min", label: "30 minutes before" },
-                                { key: "remind_15min", label: "15 minutes before" },
-                            ].map(({ key, label }) => (
-                                <div key={key} style={{
-                                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                                    padding: "10px 0",
-                                    borderBottom: "1px solid #f1f5f9",
+                    {/* Only show content when notifications are ON */}
+                    {notifSettings?.notifications_on && (
+                        <>
+                            {/* Telegram connection status */}
+                            {notifSettings?.telegram_chat_id ? (
+                                <div style={{
+                                    padding: "10px 14px", borderRadius: 12,
+                                    background: "#f0fdf4", border: "1px solid #86efac",
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    marginBottom: 16,
                                 }}>
-                                    <p style={{ fontSize: 14, color: "#0f172a", fontWeight: 500 }}>{label}</p>
-                                    <button
-                                        onClick={() => saveSettings({ [key]: !notifSettings[key as keyof NotificationSettings] })}
-                                        disabled={saving}
-                                        style={{
-                                            width: 40, height: 22, borderRadius: 11,
-                                            background: notifSettings[key as keyof NotificationSettings] ? "#1d4ed8" : "#e2e8f0",
-                                            border: "none", cursor: saving ? "not-allowed" : "pointer",
-                                            position: "relative", transition: "background 0.2s",
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: 16, height: 16, borderRadius: "50%", background: "white",
-                                            position: "absolute", top: 3,
-                                            left: notifSettings[key as keyof NotificationSettings] ? 21 : 3,
-                                            transition: "left 0.2s",
-                                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                                        }} />
-                                    </button>
+                                    <span style={{ fontSize: 16 }}>✅</span>
+                                    <p style={{ fontSize: 13, color: "#15803d", fontWeight: 600 }}>
+                                        Telegram connected
+                                    </p>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            ) : (
+                                <div style={{ marginBottom: 16 }}>
+                                    <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10 }}>
+                                        Connect your Telegram to receive class reminders.
+                                    </p>
+                                    {telegramLink && (
+                                        <button
+                                            onClick={() => window.open(telegramLink, "_blank")}
+                                            style={{
+                                                display: "inline-flex", alignItems: "center", gap: 6,
+                                                padding: "10px 16px", borderRadius: 12,
+                                                background: "#0088cc", color: "white",
+                                                fontSize: 13, fontWeight: 700,
+                                                border: "none", cursor: "pointer",
+                                                boxShadow: "0 2px 8px rgba(0,136,204,0.3)",
+                                            }}
+                                        >
+                                            <ExternalLink size={14} />
+                                            Connect Telegram
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
-                    <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 14, lineHeight: 1.6 }}>
-                        {notifSettings?.telegram_chat_id
-                            ? "You can also type /stop in the bot to disable reminders."
-                            : "Connect Telegram first to enable class reminders."
-                        }
-                    </p>
+                            {/* Reminder timing options — only show if Telegram connected */}
+                            {notifSettings?.telegram_chat_id && (
+                                <div>
+                                    <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                        Remind me before class
+                                    </p>
+                                    {[
+                                        { key: "remind_1hr", label: "1 hour before" },
+                                        { key: "remind_30min", label: "30 minutes before" },
+                                        { key: "remind_15min", label: "15 minutes before" },
+                                    ].map(({ key, label }) => (
+                                        <div key={key} style={{
+                                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                                            padding: "10px 0",
+                                            borderBottom: "1px solid #f1f5f9",
+                                        }}>
+                                            <p style={{ fontSize: 14, color: "#0f172a", fontWeight: 500 }}>{label}</p>
+                                            <button
+                                                onClick={() => saveSettings({ [key]: !notifSettings[key as keyof NotificationSettings] })}
+                                                disabled={saving}
+                                                style={{
+                                                    width: 40, height: 22, borderRadius: 11,
+                                                    background: notifSettings[key as keyof NotificationSettings] ? "#1d4ed8" : "#e2e8f0",
+                                                    border: "none", cursor: saving ? "not-allowed" : "pointer",
+                                                    position: "relative", transition: "background 0.2s",
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: 16, height: 16, borderRadius: "50%", background: "white",
+                                                    position: "absolute", top: 3,
+                                                    left: notifSettings[key as keyof NotificationSettings] ? 21 : 3,
+                                                    transition: "left 0.2s",
+                                                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                                }} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 14, lineHeight: 1.6 }}>
+                                {notifSettings?.telegram_chat_id
+                                    ? "Toggle off to disconnect Telegram and stop reminders."
+                                    : "Connect Telegram first to enable class reminders."
+                                }
+                            </p>
+                        </>
+                    )}
                 </motion.div>
             )}
         </PageWrapper>
