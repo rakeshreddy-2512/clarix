@@ -6,7 +6,6 @@ export default function ClarixLogo() {
     const boxRef = useRef<HTMLDivElement>(null);
     const [fontReady, setFontReady] = useState(false);
 
-    // ✅ Force load Dancing Script font before rendering
     useEffect(() => {
         const font = new FontFace(
             "Dancing Script",
@@ -17,7 +16,6 @@ export default function ClarixLogo() {
             document.fonts.add(loadedFont);
             setFontReady(true);
         }).catch(() => {
-            // Fallback — try document.fonts.load
             document.fonts.load("700 48px 'Dancing Script'").then(() => {
                 setFontReady(true);
             });
@@ -36,7 +34,6 @@ export default function ClarixLogo() {
         canvas.width = W;
         canvas.height = H;
 
-        // Static twinkling stars
         const stars: any[] = [];
         for (let i = 0; i < 80; i++) {
             stars.push({
@@ -49,30 +46,31 @@ export default function ClarixLogo() {
             });
         }
 
-        // ✅ Reduced shooting stars — max 2 at a time, spawn every 2.5s
         const shooting: any[] = [];
+
+        // ✅ Strictly max 2 shooting stars at a time
         const spawnShooting = () => {
-            if (shooting.length >= 2) return; // max 2 at a time
+            const active = shooting.filter(s => s.alpha > 0).length;
+            if (active >= 2) return;
             shooting.push({
-                x: W * 0.5 + Math.random() * W * 0.6,
-                y: Math.random() * H * 0.35,
-                speed: Math.random() * 2 + 1.5,
+                x: W * 0.5 + Math.random() * W * 0.5,
+                y: Math.random() * H * 0.3,
+                speed: Math.random() * 1.5 + 1.5,
                 alpha: 1,
                 tail: [] as { x: number; y: number }[],
-                len: Math.random() * 40 + 30,
-                width: Math.random() * 0.6 + 0.4,
+                len: Math.random() * 35 + 25,
+                width: Math.random() * 0.5 + 0.4,
                 color: Math.random() > 0.5 ? "200,220,255" : "255,240,200",
             });
         };
 
         spawnShooting();
-        const shootInterval = setInterval(spawnShooting, 2500); // ✅ every 2.5s
+        const shootInterval = setInterval(spawnShooting, 2500);
 
         let animId: number;
         const draw = () => {
             ctx.clearRect(0, 0, W, H);
 
-            // Twinkling stars
             stars.forEach(s => {
                 s.alpha += s.speed * s.dir;
                 if (s.alpha >= 1) s.dir = -1;
@@ -93,14 +91,13 @@ export default function ClarixLogo() {
                 }
             });
 
-            // Shooting stars
             for (let i = shooting.length - 1; i >= 0; i--) {
                 const s = shooting[i];
                 s.x -= s.speed * 1.2;
                 s.y += s.speed * 0.8;
                 s.tail.push({ x: s.x, y: s.y });
                 if (s.tail.length > s.len) s.tail.shift();
-                s.alpha -= 0.008;
+                s.alpha -= 0.01;
 
                 if (s.tail.length > 1) {
                     for (let j = 1; j < s.tail.length; j++) {
@@ -152,7 +149,6 @@ export default function ClarixLogo() {
                 justifyContent: "center",
             }}
         >
-            {/* Canvas for cosmic background */}
             <canvas
                 ref={canvasRef}
                 style={{
@@ -161,8 +157,6 @@ export default function ClarixLogo() {
                     width: "100%", height: "100%",
                 }}
             />
-
-            {/* ✅ CSS animated cursive text — only render when font is ready */}
             <div style={{ position: "relative", zIndex: 2, display: "flex" }}>
                 {fontReady && "Clarix".split("").map((letter, i) => (
                     <span
@@ -183,7 +177,6 @@ export default function ClarixLogo() {
                     </span>
                 ))}
             </div>
-
             <style>{`
                 @keyframes letterAppear {
                     0% { opacity: 0; transform: translateY(10px); }
