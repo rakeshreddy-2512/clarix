@@ -3,8 +3,8 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Clarix — SRM Academia Tracker",
-    description: "Track your SRM Academia attendance, marks and timetable in style",
+    title: "Clarix",
+    description: "Track your attendance, marks and timetable",
     manifest: "/manifest.json",
     icons: {
         icon: "/favicon.svg",
@@ -29,6 +29,9 @@ export default function RootLayout({
         <html lang="en">
             <head>
                 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet" />
                 <Script
                     async
                     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1699973490040764"

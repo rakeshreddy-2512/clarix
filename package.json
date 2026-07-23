@@ -18,7 +18,7 @@
     "agent-base": "7.1.4",
     "axios": "^1.7.4",
     "axios-cookiejar-support": "6.0.5",
-    "cheerio": "^1.0.0-rc.12",
+    "cheerio": "^1.2.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.0.0",
     "http-cookie-agent": "7.0.3",
