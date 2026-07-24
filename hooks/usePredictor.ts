@@ -1,7 +1,5 @@
 "use client";
-
 import { AttendanceCourse } from "@/utils/types";
-import { calculateFuturePercentage } from "@/utils/helpers";
 
 export interface PlannerDay {
     date: string;
@@ -19,7 +17,6 @@ export interface PredictorResult {
     delta: number;
 }
 
-// SRM Batch 1 slot → day orders it appears on
 const SLOT_DAY_ORDERS: Record<string, number[]> = {
     A: [1, 2, 3],
     B: [2, 3, 4],
@@ -28,7 +25,6 @@ const SLOT_DAY_ORDERS: Record<string, number[]> = {
     E: [4, 5],
     F: [1, 5],
     G: [1, 2],
-    // Lab slots — each appears on 1 day order
     P6: [1], P7: [1], P8: [1], P9: [1], P10: [1],
     P11: [2], P12: [2], P13: [2], P14: [2], P15: [2],
     P26: [3], P27: [3], P28: [3], P29: [3], P30: [3],
@@ -41,7 +37,6 @@ const SLOT_DAY_ORDERS: Record<string, number[]> = {
     L51: [5], L52: [5],
 };
 
-// Batch 2 slot → day orders
 const SLOT_DAY_ORDERS_BATCH2: Record<string, number[]> = {
     A: [1, 2, 3],
     B: [2, 3, 4],
@@ -72,11 +67,9 @@ function countClassesInRange(
     const slotMap = batch === 2 ? SLOT_DAY_ORDERS_BATCH2 : SLOT_DAY_ORDERS;
     const dayOrders = slotMap[slot.toUpperCase()];
     if (!dayOrders) return 0;
-
     let count = 0;
     const current = new Date(fromDate + "T00:00:00");
     const end = new Date(toDate + "T00:00:00");
-
     while (current <= end) {
         const dateStr = current.toISOString().split("T")[0];
         const plannerDay = plannerMap[dateStr];
@@ -85,7 +78,6 @@ function countClassesInRange(
         }
         current.setDate(current.getDate() + 1);
     }
-
     return count;
 }
 
@@ -98,15 +90,12 @@ export function usePredictor(
     batch?: number
 ): PredictorResult | null {
     if (!course || !fromDate || !toDate) return null;
-
     const from = new Date(fromDate);
     const to = new Date(toDate);
     if (from > to) return null;
 
     let futureClasses: number;
-
     if (plannerMap && Object.keys(plannerMap).length > 0 && course.slot) {
-        // Accurate calculation using planner + slot mapping
         futureClasses = countClassesInRange(
             course.slot,
             fromDate,
@@ -115,7 +104,6 @@ export function usePredictor(
             batch || 1
         );
     } else {
-        // Fallback: estimate from business days
         let businessDays = 0;
         const current = new Date(from);
         while (current <= to) {
@@ -131,12 +119,14 @@ export function usePredictor(
     const futureTotal = course.totalClasses + futureClasses;
     const futureAttended = course.attended + (willAttend ? futureClasses : 0);
     const futureAbsent = futureTotal - futureAttended;
-    const futurePercentage = calculateFuturePercentage(
-        course.attended,
-        course.totalClasses,
-        futureClasses,
-        willAttend
-    );
+
+    // ✅ Handle division by zero when no classes held yet
+    const futurePercentage = futureTotal > 0
+        ? Math.round((futureAttended / futureTotal) * 100)
+        : 0;
+
+    // ✅ Use 0 as current percentage when no classes held yet
+    const currentPercentage = course.totalClasses > 0 ? course.percentage : 0;
 
     return {
         futureClasses,
@@ -145,6 +135,6 @@ export function usePredictor(
         futureAbsent,
         futurePercentage,
         safe: futurePercentage >= 75,
-        delta: futurePercentage - course.percentage,
+        delta: futurePercentage - currentPercentage,
     };
 }
