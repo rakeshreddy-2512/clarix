@@ -102,6 +102,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             const from = new Date(fromDate);
             const to = new Date(toDate);
             if (from > to) return null;
+
             const futureClasses = countFutureClasses(
                 c.slot || "",
                 fromDate,
@@ -110,13 +111,22 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 c.category,
                 batch
             );
+
             const futureTotal = c.totalClasses + futureClasses;
             const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
+
+            // ✅ Handle totalClasses = 0
             const futurePercentage = futureTotal > 0
                 ? Math.round((futureAttendedTotal / futureTotal) * 100)
-                : c.percentage;
-            const delta = futurePercentage - c.percentage;
-            return { course: c, futurePercentage, delta, futureClasses };
+                : 0;
+
+            // ✅ Use 0 as current when no classes held yet
+            const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
+
+            // ✅ Round delta to avoid floating point issues
+            const delta = Math.round((futurePercentage - currentPercentage) * 100) / 100;
+
+            return { course: c, futurePercentage, delta, futureClasses, currentPercentage };
         }).filter(Boolean)
         : [];
 
@@ -262,7 +272,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                         </p>
                         {allSubjectsResults.map((item, i) => {
                             if (!item) return null;
-                            const { course: c, futurePercentage, delta } = item;
+                            const { course: c, futurePercentage, delta, currentPercentage } = item;
                             const isExcellent = futurePercentage > 75;
                             const isWarning = futurePercentage === 75;
                             const resultColor = isExcellent ? "#16a34a" : isWarning ? "#d97706" : "#dc2626";
@@ -284,7 +294,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                         display: "flex", flexDirection: "column", gap: 12,
                                     }}
                                 >
-                                    {/* Course name and code */}
                                     <div>
                                         <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
                                             {c.title}
@@ -294,7 +303,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                         </p>
                                     </div>
 
-                                    {/* Current → Predicted → Delta */}
                                     <div style={{
                                         padding: "12px 14px", borderRadius: 12,
                                         background: "#f8fafc", border: "1px solid #e2e8f0",
@@ -302,7 +310,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                     }}>
                                         <div style={{ textAlign: "center" }}>
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
-                                            <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{c.percentage}%</p>
+                                            <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{currentPercentage}%</p>
                                         </div>
 
                                         <div style={{ fontSize: 20, color: "#94a3b8" }}>→</div>
@@ -319,7 +327,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                         }}>
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
                                             <p style={{ fontSize: 16, fontWeight: 800, color: resultColor }}>
-                                                {isPositive ? "+" : ""}{delta}%
+                                                {isPositive ? "+" : ""}{Number.isInteger(delta) ? delta : delta.toFixed(2)}%
                                             </p>
                                         </div>
                                     </div>
