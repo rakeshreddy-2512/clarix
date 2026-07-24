@@ -79,8 +79,8 @@ export default function ProfilePage() {
             const token = getToken();
             const newSettings = { ...notifSettings, ...updated };
 
-            // ✅ If turning OFF — clear telegram_chat_id
-            if (updated.notifications_on === false) {
+            // ✅ Always clear telegram_chat_id when toggling ON or OFF
+            if (updated.notifications_on === false || updated.notifications_on === true) {
                 newSettings.telegram_chat_id = null;
             }
 
