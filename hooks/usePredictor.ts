@@ -57,6 +57,20 @@ const SLOT_DAY_ORDERS_BATCH2: Record<string, number[]> = {
     L51: [5], L52: [5],
 };
 
+// ✅ Timezone-safe date string generator
+function localDateStr(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+// ✅ Timezone-safe date parser
+function parseLocalDate(dateStr: string): Date {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+}
+
 function countClassesInRange(
     slot: string,
     fromDate: string,
@@ -68,10 +82,10 @@ function countClassesInRange(
     const dayOrders = slotMap[slot.toUpperCase()];
     if (!dayOrders) return 0;
     let count = 0;
-    const current = new Date(fromDate + "T00:00:00");
-    const end = new Date(toDate + "T00:00:00");
+    const current = parseLocalDate(fromDate);
+    const end = parseLocalDate(toDate);
     while (current <= end) {
-        const dateStr = current.toISOString().split("T")[0];
+        const dateStr = localDateStr(current);
         const plannerDay = plannerMap[dateStr];
         if (plannerDay?.dayOrder && dayOrders.includes(plannerDay.dayOrder)) {
             count++;
@@ -90,8 +104,8 @@ export function usePredictor(
     batch?: number
 ): PredictorResult | null {
     if (!course || !fromDate || !toDate) return null;
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
+    const from = parseLocalDate(fromDate);
+    const to = parseLocalDate(toDate);
     if (from > to) return null;
 
     let futureClasses: number;
@@ -105,27 +119,24 @@ export function usePredictor(
         );
     } else {
         let businessDays = 0;
-        const current = new Date(from);
+        const current = parseLocalDate(fromDate);
         while (current <= to) {
             const day = current.getDay();
             if (day !== 0 && day !== 6) businessDays++;
             current.setDate(current.getDate() + 1);
         }
         const classesPerWeek = course.category === "Practical" ? 1 : 3;
-        const weeksApprox = businessDays / 5;
-        futureClasses = Math.round(weeksApprox * classesPerWeek);
+        futureClasses = Math.round((businessDays / 5) * classesPerWeek);
     }
 
     const futureTotal = course.totalClasses + futureClasses;
     const futureAttended = course.attended + (willAttend ? futureClasses : 0);
     const futureAbsent = futureTotal - futureAttended;
 
-    // ✅ Handle division by zero when no classes held yet
     const futurePercentage = futureTotal > 0
         ? Math.round((futureAttended / futureTotal) * 100)
         : 0;
 
-    // ✅ Use 0 as current percentage when no classes held yet
     const currentPercentage = course.totalClasses > 0 ? course.percentage : 0;
 
     return {
@@ -135,6 +146,6 @@ export function usePredictor(
         futureAbsent,
         futurePercentage,
         safe: futurePercentage >= 75,
-        delta: futurePercentage - currentPercentage,
+        delta: Math.round((futurePercentage - currentPercentage) * 100) / 100,
     };
 }

@@ -37,6 +37,20 @@ const SLOT_DAY_ORDERS_BATCH2: Record<string, number[]> = {
     L31: [3], L32: [3], L41: [4], L42: [4], L51: [5], L52: [5],
 };
 
+// ✅ Timezone-safe date string generator
+function localDateStr(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+// ✅ Timezone-safe date parser
+function parseLocalDate(dateStr: string): Date {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+}
+
 function countFutureClasses(
     slot: string,
     fromDate: string,
@@ -49,10 +63,10 @@ function countFutureClasses(
     if (Object.keys(plannerMap).length > 0 && slot) {
         const dayOrders = slotMap[slot.toUpperCase()] || [];
         let count = 0;
-        const current = new Date(fromDate + "T00:00:00");
-        const end = new Date(toDate + "T00:00:00");
+        const current = parseLocalDate(fromDate);
+        const end = parseLocalDate(toDate);
         while (current <= end) {
-            const dateStr = current.toISOString().split("T")[0];
+            const dateStr = localDateStr(current);
             const plannerDay = plannerMap[dateStr];
             if (plannerDay?.dayOrder && dayOrders.includes(plannerDay.dayOrder)) {
                 count++;
@@ -62,8 +76,8 @@ function countFutureClasses(
         return count;
     } else {
         let businessDays = 0;
-        const current = new Date(fromDate);
-        const end = new Date(toDate);
+        const current = parseLocalDate(fromDate);
+        const end = parseLocalDate(toDate);
         while (current <= end) {
             const day = current.getDay();
             if (day !== 0 && day !== 6) businessDays++;
@@ -99,8 +113,8 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
 
     const allSubjectsResults = isAllSubjects && fromDate && toDate
         ? courses.map(c => {
-            const from = new Date(fromDate);
-            const to = new Date(toDate);
+            const from = parseLocalDate(fromDate);
+            const to = parseLocalDate(toDate);
             if (from > to) return null;
 
             const futureClasses = countFutureClasses(
@@ -115,15 +129,11 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             const futureTotal = c.totalClasses + futureClasses;
             const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
 
-            // ✅ Handle totalClasses = 0
             const futurePercentage = futureTotal > 0
                 ? Math.round((futureAttendedTotal / futureTotal) * 100)
                 : 0;
 
-            // ✅ Use 0 as current when no classes held yet
             const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
-
-            // ✅ Round delta to avoid floating point issues
             const delta = Math.round((futurePercentage - currentPercentage) * 100) / 100;
 
             return { course: c, futurePercentage, delta, futureClasses, currentPercentage };
