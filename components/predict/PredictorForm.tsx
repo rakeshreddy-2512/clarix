@@ -37,7 +37,6 @@ const SLOT_DAY_ORDERS_BATCH2: Record<string, number[]> = {
     L31: [3], L32: [3], L41: [4], L42: [4], L51: [5], L52: [5],
 };
 
-// ✅ Timezone-safe date string generator
 function localDateStr(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -45,7 +44,6 @@ function localDateStr(date: Date): string {
     return `${y}-${m}-${d}`;
 }
 
-// ✅ Timezone-safe date parser
 function parseLocalDate(dateStr: string): Date {
     const [y, m, d] = dateStr.split("-").map(Number);
     return new Date(y, m - 1, d);
@@ -60,16 +58,13 @@ function countFutureClasses(
     batch: number = 1
 ): number {
     const slotMap = batch === 2 ? SLOT_DAY_ORDERS_BATCH2 : SLOT_DAY_ORDERS;
-
     if (Object.keys(plannerMap).length > 0 && slot) {
-        // ✅ Handle comma-separated slots like P46,P47,P48
         const slots = slot.split(",").map(s => s.trim().toUpperCase());
         const dayOrdersSet = new Set<number>();
         slots.forEach(s => {
             (slotMap[s] || []).forEach(d => dayOrdersSet.add(d));
         });
         const dayOrders = Array.from(dayOrdersSet);
-
         let count = 0;
         const current = parseLocalDate(fromDate);
         const end = parseLocalDate(toDate);
@@ -136,18 +131,15 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
 
             const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
 
-            // ✅ If no future classes, no change
             if (futureClasses === 0) {
                 return { course: c, futurePercentage: currentPercentage, delta: 0, futureClasses: 0, currentPercentage };
             }
 
             const futureTotal = c.totalClasses + futureClasses;
             const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
-
             const futurePercentage = futureTotal > 0
                 ? Math.round((futureAttendedTotal / futureTotal) * 100)
                 : 0;
-
             const delta = Math.round((futurePercentage - currentPercentage) * 100) / 100;
 
             return { course: c, futurePercentage, delta, futureClasses, currentPercentage };
@@ -281,6 +273,21 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 <TrendingUp size={17} />
                 {isAllSubjects ? "Predict All Subjects" : "Predict Attendance"}
             </motion.button>
+
+            {/* ✅ Note about optional classes */}
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                style={{
+                    padding: "12px 14px", borderRadius: 12,
+                    background: "#fffbeb", border: "1px solid #fde68a",
+                    fontSize: 12, color: "#92400e", fontWeight: 500,
+                    lineHeight: 1.6,
+                }}
+            >
+                ⚠️ <b>Note:</b> If any subject has an optional class within your selected date range, use <b>single subject prediction</b> for more accurate results instead of All Subjects.
+            </motion.div>
 
             {/* Single course result */}
             {showResult && !isAllSubjects && course && result && (
