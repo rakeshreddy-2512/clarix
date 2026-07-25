@@ -60,8 +60,16 @@ function countFutureClasses(
     batch: number = 1
 ): number {
     const slotMap = batch === 2 ? SLOT_DAY_ORDERS_BATCH2 : SLOT_DAY_ORDERS;
+
     if (Object.keys(plannerMap).length > 0 && slot) {
-        const dayOrders = slotMap[slot.toUpperCase()] || [];
+        // ✅ Handle comma-separated slots like P46,P47,P48
+        const slots = slot.split(",").map(s => s.trim().toUpperCase());
+        const dayOrdersSet = new Set<number>();
+        slots.forEach(s => {
+            (slotMap[s] || []).forEach(d => dayOrdersSet.add(d));
+        });
+        const dayOrders = Array.from(dayOrdersSet);
+
         let count = 0;
         const current = parseLocalDate(fromDate);
         const end = parseLocalDate(toDate);
@@ -126,6 +134,13 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 batch
             );
 
+            const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
+
+            // ✅ If no future classes, no change
+            if (futureClasses === 0) {
+                return { course: c, futurePercentage: currentPercentage, delta: 0, futureClasses: 0, currentPercentage };
+            }
+
             const futureTotal = c.totalClasses + futureClasses;
             const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
 
@@ -133,7 +148,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 ? Math.round((futureAttendedTotal / futureTotal) * 100)
                 : 0;
 
-            const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
             const delta = Math.round((futurePercentage - currentPercentage) * 100) / 100;
 
             return { course: c, futurePercentage, delta, futureClasses, currentPercentage };
