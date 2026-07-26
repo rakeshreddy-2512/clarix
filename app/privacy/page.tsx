@@ -69,8 +69,8 @@ export default function PrivacyPage() {
                 <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Contact</h2>
                 <p style={{ color: "#475569", fontSize: 15 }}>
                     For any privacy concerns or data deletion requests, contact us at:{" "}
-                    <a href="mailto:rakeshreddy2512@gmail.com" style={{ color: "#1d4ed8" }}>
-                        rakeshreddy2512@gmail.com
+                    <a href="mailto:yolooo10@proton.me" style={{ color: "#1d4ed8" }}>
+                        yolooo10@proton.me
                     </a>
                 </p>
             </section>
