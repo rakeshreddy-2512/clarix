@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -414,7 +414,17 @@ export default function LoginForm() {
                 >
                     <Zap size={10} /> Powered by Clarix
                 </motion.p>
+
+                {/* ✅ Privacy Policy link */}
+
+                <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
+                    By signing in you agree to our{" "}
+                    <a href="/privacy" target="_blank" style={{ color: "#1d4ed8", fontWeight: 600 }}>
+                        Privacy Policy
+                    </a>
+                </p>
             </div>
+                
         </>
     );
 }
