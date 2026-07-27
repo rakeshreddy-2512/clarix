@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
         // ✅ Step 2 — Decrypt cookies
         const cookies = decrypt(cookieData.cookies_encrypted);
-        console.log(`🍪 Using cookies updated at: ${cookieData.updated_at}`);
+        console.log(`🪄 Using cookies updated at: ${cookieData.updated_at}`);
 
         // ✅ Step 3 — Scrape planner from SRM portal
         console.log("🔄 Scraping planner from SRM...");
@@ -36,48 +36,27 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Planner parsing failed — empty result" }, { status: 500 });
         }
 
-        // ✅ Step 4 — Update plannerMap for ALL users with notifications enabled
-        const { data: users, error: usersError } = await supabase
-            .from("user_notifications")
-            .select("reg_number, timetable_json")
-            .eq("notifications_on", true)
-            .not("telegram_chat_id", "is", null);
+        // ✅ Step 4 — Update planner_cache (1 row, 1 write for ALL users)
+        const { error: cacheError } = await supabase
+            .from("planner_cache")
+            .upsert({
+                id: 1,
+                planner_map: planner.map,
+                semester: planner.semester,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: "id" });
 
-        if (usersError) {
-            return NextResponse.json({ error: usersError.message }, { status: 500 });
+        if (cacheError) {
+            return NextResponse.json({ error: cacheError.message }, { status: 500 });
         }
 
-        if (!users || users.length === 0) {
-            return NextResponse.json({ success: true, message: "No users to update" });
-        }
+        console.log(`✅ Planner cache updated — ${Object.keys(planner.map).length} days`);
 
-        // ✅ Step 5 — Update each user's plannerMap
-        let updated = 0;
-        for (const user of users) {
-            const updatedJson = {
-                ...user.timetable_json,
-                plannerMap: planner.map,
-            };
-
-            await supabase
-                .from("user_notifications")
-                .update({
-                    timetable_json: updatedJson,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("reg_number", user.reg_number);
-
-            updated++;
-        }
-
-        console.log(`✅ Updated planner for ${updated} users`);
         return NextResponse.json({
             success: true,
-            updated,
             plannerDays: Object.keys(planner.map).length,
             semester: planner.semester,
         });
-
     } catch (error) {
         console.error("Update planner cron error:", error);
         return NextResponse.json({ error: "Failed" }, { status: 500 });

@@ -37,6 +37,33 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        const today = getTodayIST();
+        const currentMinutes = getCurrentISTMinutes();
+
+        // ✅ Step 1 — Read planner_cache once for all users
+        const { data: plannerCache, error: plannerError } = await supabase
+            .from("planner_cache")
+            .select("planner_map")
+            .eq("id", 1)
+            .single();
+
+        if (plannerError || !plannerCache) {
+            return NextResponse.json({ error: "Planner cache not found" }, { status: 500 });
+        }
+
+        const plannerMap = plannerCache.planner_map;
+
+        // ✅ Check today's day order once for all users
+        const todayPlanner = plannerMap[today];
+        if (!todayPlanner || !todayPlanner.dayOrder) {
+            console.log(`⏭️ No classes today (${today}) — holiday or weekend`);
+            return NextResponse.json({ success: true, remindersSent: 0, date: today, currentMinutes, message: "No classes today" });
+        }
+
+        const dayOrder = todayPlanner.dayOrder;
+        console.log(`📅 Today is DO ${dayOrder}`);
+
+        // ✅ Step 2 — Read all users with notifications enabled
         const { data: users, error } = await supabase
             .from("user_notifications")
             .select("*")
@@ -52,27 +79,18 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, message: "No users to notify" });
         }
 
-        const today = getTodayIST();
-        const currentMinutes = getCurrentISTMinutes();
         let remindersSent = 0;
 
+        // ✅ Step 3 — Send reminders for each user
         for (const user of users) {
             try {
                 const timetable = user.timetable_json?.timetable;
-                const plannerMap = user.timetable_json?.plannerMap;
-                if (!timetable || !plannerMap) continue;
-
-                const todayPlanner = plannerMap[today];
-                if (!todayPlanner || !todayPlanner.dayOrder) {
-                    console.log(`⏭️ ${user.reg_number} — no classes today (${today})`);
-                    continue;
-                }
-
-                const dayOrder = todayPlanner.dayOrder;
-                console.log(`📅 ${user.reg_number} — today is DO ${dayOrder}`);
+                if (!timetable) continue;
 
                 const daySlots = timetable[dayOrder] || [];
                 if (daySlots.length === 0) continue;
+
+                console.log(`📅 ${user.reg_number} — today is DO ${dayOrder}`);
 
                 for (const slot of daySlots) {
                     const classMinutes = timeToMinutes(slot.startTime);
@@ -82,7 +100,6 @@ export async function GET(req: NextRequest) {
                         let shouldSend = false;
                         let reminderText = "";
 
-                        // ✅ Use range ±10 minutes instead of ±5
                         if (user.remind_1hr && minutesUntilClass >= 50 && minutesUntilClass <= 70) {
                             shouldSend = true;
                             reminderText = "1 hour";
