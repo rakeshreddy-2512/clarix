@@ -1,6 +1,6 @@
-const TOKEN_KEY = "trackemia_token";
-const NAME_KEY = "trackemia_name";
-const EXPIRY_KEY = "trackemia_expiry";
+const TOKEN_KEY = "clarix_token";
+const NAME_KEY = "clarix_name";
+const EXPIRY_KEY = "clarix_expiry";
 
 export function saveSession(token: string, name: string): void {
     if (typeof window === "undefined") return;

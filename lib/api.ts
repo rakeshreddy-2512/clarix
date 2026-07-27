@@ -1,6 +1,6 @@
 function getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("trackemia_token");
+    return localStorage.getItem("clarix_token");
 }
 
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
