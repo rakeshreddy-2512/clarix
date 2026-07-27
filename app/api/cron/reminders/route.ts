@@ -60,13 +60,11 @@ export async function GET(req: NextRequest) {
             try {
                 const timetable = user.timetable_json?.timetable;
                 const plannerMap = user.timetable_json?.plannerMap;
-
                 if (!timetable || !plannerMap) continue;
 
-                // ✅ Get today's day order from plannerMap
                 const todayPlanner = plannerMap[today];
                 if (!todayPlanner || !todayPlanner.dayOrder) {
-                    console.log(`⏭️ ${user.reg_number} — no classes today (${today}) holiday or weekend`);
+                    console.log(`⏭️ ${user.reg_number} — no classes today (${today})`);
                     continue;
                 }
 
@@ -84,13 +82,14 @@ export async function GET(req: NextRequest) {
                         let shouldSend = false;
                         let reminderText = "";
 
-                        if (user.remind_1hr && minutesUntilClass === 60) {
+                        // ✅ Use range ±10 minutes instead of ±5
+                        if (user.remind_1hr && minutesUntilClass >= 50 && minutesUntilClass <= 70) {
                             shouldSend = true;
                             reminderText = "1 hour";
-                        } else if (user.remind_30min && minutesUntilClass === 30) {
+                        } else if (user.remind_30min && minutesUntilClass >= 20 && minutesUntilClass <= 40) {
                             shouldSend = true;
                             reminderText = "30 minutes";
-                        } else if (user.remind_15min && minutesUntilClass === 15) {
+                        } else if (user.remind_15min && minutesUntilClass >= 5 && minutesUntilClass <= 25) {
                             shouldSend = true;
                             reminderText = "15 minutes";
                         }
