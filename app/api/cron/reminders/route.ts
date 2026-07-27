@@ -100,13 +100,13 @@ export async function GET(req: NextRequest) {
                         let shouldSend = false;
                         let reminderText = "";
 
-                        if (user.remind_1hr && minutesUntilClass >= 50 && minutesUntilClass <= 70) {
+                        if (user.remind_1hr && minutesUntilClass >= 53 && minutesUntilClass <= 67) {
                             shouldSend = true;
                             reminderText = "1 hour";
-                        } else if (user.remind_30min && minutesUntilClass >= 20 && minutesUntilClass <= 40) {
+                        } else if (user.remind_30min && minutesUntilClass >= 23 && minutesUntilClass <= 37) {
                             shouldSend = true;
                             reminderText = "30 minutes";
-                        } else if (user.remind_15min && minutesUntilClass >= 5 && minutesUntilClass <= 25) {
+                        } else if (user.remind_15min && minutesUntilClass >= 8 && minutesUntilClass <= 22) {
                             shouldSend = true;
                             reminderText = "15 minutes";
                         }
