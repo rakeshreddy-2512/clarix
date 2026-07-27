@@ -38,6 +38,9 @@ export function useFetchWithCache<T>(
 
     const saveToCache = (data: T) => {
         try {
+            // ✅ Never cache empty arrays
+            if (Array.isArray(data) && data.length === 0) return;
+
             localStorage.setItem(getStorageKey(), JSON.stringify({
                 data,
                 timestamp: Date.now()
@@ -79,6 +82,12 @@ export function useFetchWithCache<T>(
         const cached = getFromCache();
 
         if (cached) {
+            // ✅ Never use empty array from cache
+            if (Array.isArray(cached.data) && cached.data.length === 0) {
+                fetchFresh(true);
+                return;
+            }
+
             setData(cached.data);
             setLoading(false);
 
