@@ -14,7 +14,7 @@ export default function AttendanceCard({ course, index }: Props) {
         excellent: { bg: "#f0fdf4", border: "#86efac", badge: "#dcfce7", badgeBorder: "#86efac", badgeText: "#15803d", label: `Can skip ${canSkip}` },
         safe: { bg: "#f0eeff", border: "#c4b5fd", badge: "#f0eeff", badgeBorder: "#c4b5fd", badgeText: "#302b63", label: `Can skip ${canSkip}` },
         warning: { bg: "#fffbeb", border: "#fcd34d", badge: "#fef3c7", badgeBorder: "#fcd34d", badgeText: "#b45309", label: `Need ${needToAttend} more` },
-        danger: { bg: "#fef2f2", border: "#fca5a5", badge: "#fee2e2", badgeBorder: "#fca5a5", badgeText: "#dc2626", label: `Need ${needToAttend} urgently` },
+        danger: { bg: "#fef2f2", border: "#fca5a5", badge: "#fee2e2", badgeBorder: "#fca5a5", badgeText: "#dc2626", label: `Attend ${needToAttend} classes` },
     }[status];
 
     return (
