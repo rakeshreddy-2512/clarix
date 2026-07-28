@@ -10,7 +10,7 @@ interface FetchState<T> {
 }
 
 // ✅ Increment this when parsers/scrapers change to invalidate old cache
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 
 export function useFetchWithCache<T>(
     fetchFn: () => Promise<T>,
