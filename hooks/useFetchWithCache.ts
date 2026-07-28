@@ -61,6 +61,13 @@ export function useFetchWithCache<T>(
         setError(null);
         try {
             const result = await fetchFn();
+
+            // ✅ If result is empty array but we have existing data, keep existing
+            if (Array.isArray(result) && result.length === 0 && data !== null) {
+                console.warn("⚠️ Empty result — keeping existing data");
+                return;
+            }
+
             setData(result as T);
             saveToCache(result as T);
         } catch (err: unknown) {
