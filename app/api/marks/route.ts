@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `marks:${regNo}`;
         const hashKey = `marks:${regNo}:hash`;
-        const TTL = 600; // ✅ 10 minutes
+        const TTL = 3600; // ✅ 1 hour
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
                     const html = await scrapeAttendanceAndMarks(cookies);
                     const freshMarks = parseMarks(html);
 
-                    // ✅ Never overwrite cache with empty data
                     if (freshMarks.length === 0) {
                         console.log("⚠️ Fresh marks is empty — keeping cached data");
                         return;
@@ -55,7 +54,6 @@ export async function GET(req: NextRequest) {
         try {
             let marks: any[] = [];
 
-            // ✅ Retry up to 2 times if empty
             for (let attempt = 1; attempt <= 2; attempt++) {
                 const html = await scrapeAttendanceAndMarks(cookies);
                 marks = parseMarks(html);
@@ -69,10 +67,9 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ success: true, data: marks, source: "fresh" });
             }
 
-            // ✅ Both attempts empty — show error
             return NextResponse.json({
                 success: false,
-                error: "SRM Academia is slow. Please refresh and try again.",
+                error: "SRM Academia is slow. Please try again.",
             }, { status: 503 });
 
         } catch {

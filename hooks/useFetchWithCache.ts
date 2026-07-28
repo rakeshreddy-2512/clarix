@@ -9,7 +9,6 @@ interface FetchState<T> {
     refetch: () => void;
 }
 
-// ✅ Increment this when parsers/scrapers change to invalidate old cache
 const CACHE_VERSION = "v5";
 
 export function useFetchWithCache<T>(
@@ -38,7 +37,6 @@ export function useFetchWithCache<T>(
 
     const saveToCache = (data: T) => {
         try {
-            // ✅ Never cache empty arrays
             if (Array.isArray(data) && data.length === 0) return;
 
             localStorage.setItem(getStorageKey(), JSON.stringify({
@@ -46,14 +44,11 @@ export function useFetchWithCache<T>(
                 timestamp: Date.now()
             }));
 
-            // ✅ If this is profile data, update the name in session
             if (cacheKey === "profile" && data && (data as any).name) {
                 updateName((data as any).name);
                 window.dispatchEvent(new Event("session-updated"));
             }
-        } catch {
-            // localStorage might be full
-        }
+        } catch { }
     };
 
     const fetchFresh = async (showLoading = false) => {
@@ -62,9 +57,10 @@ export function useFetchWithCache<T>(
         try {
             const result = await fetchFn();
 
-            // ✅ If result is empty array but we have existing data, keep existing
-            if (Array.isArray(result) && result.length === 0 && data !== null) {
+            // ✅ If result is empty array — keep existing data
+            if (Array.isArray(result) && result.length === 0) {
                 console.warn("⚠️ Empty result — keeping existing data");
+                if (showLoading) setLoading(false);
                 return;
             }
 
@@ -72,7 +68,7 @@ export function useFetchWithCache<T>(
             saveToCache(result as T);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to fetch data";
-            setError(message);
+            if (!data) setError(message);
         } finally {
             if (showLoading) setLoading(false);
         }
@@ -89,7 +85,6 @@ export function useFetchWithCache<T>(
         const cached = getFromCache();
 
         if (cached) {
-            // ✅ Never use empty array from cache
             if (Array.isArray(cached.data) && cached.data.length === 0) {
                 fetchFresh(true);
                 return;
@@ -100,7 +95,8 @@ export function useFetchWithCache<T>(
 
             const age = Date.now() - cached.timestamp;
             if (age > ttlMs) {
-                fetchFresh(false);
+                // ✅ Auto re-fetch after 3 seconds to get fresh data silently
+                setTimeout(() => fetchFresh(false), 3000);
             }
         } else {
             fetchFresh(true);
