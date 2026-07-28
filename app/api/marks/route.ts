@@ -18,10 +18,11 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `marks:${regNo}`;
         const hashKey = `marks:${regNo}:hash`;
-        const TTL = 120;
+        const TTL = 600; // ✅ 10 minutes
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
+            // ✅ Return cached data immediately, sync in background
             (async () => {
                 try {
                     const html = await scrapeAttendanceAndMarks(cookies);
@@ -35,12 +36,11 @@ export async function GET(req: NextRequest) {
 
                     const freshHash = hashData(freshMarks);
                     const cachedHash = await getCachedData<string>(hashKey);
+
                     if (freshHash !== cachedHash) {
                         await cacheData(cacheKey, freshMarks, TTL);
                         await cacheData(hashKey, freshHash, TTL);
                         const freshAttendance = parseAttendance(html);
-
-                        // ✅ Never overwrite attendance cache with empty data
                         if (freshAttendance.length > 0) {
                             await cacheData(`attendance:${regNo}`, freshAttendance, TTL);
                             await cacheData(`attendance:${regNo}:hash`, hashData(freshAttendance), TTL);
@@ -48,21 +48,33 @@ export async function GET(req: NextRequest) {
                     }
                 } catch (err) { console.error(`Background marks sync failed:`, err); }
             })();
+
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
         try {
-            const html = await scrapeAttendanceAndMarks(cookies);
-            const marks = parseMarks(html);
-            const hash = hashData(marks);
+            let marks: any[] = [];
 
-            // ✅ Only cache if data is not empty
-            if (marks.length > 0) {
-                await cacheData(cacheKey, marks, TTL);
-                await cacheData(hashKey, hash, TTL);
+            // ✅ Retry up to 2 times if empty
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                const html = await scrapeAttendanceAndMarks(cookies);
+                marks = parseMarks(html);
+                if (marks.length > 0) break;
+                console.log(`⚠️ Marks empty — attempt ${attempt}/2`);
             }
 
-            return NextResponse.json({ success: true, data: marks, source: "fresh" });
+            if (marks.length > 0) {
+                await cacheData(cacheKey, marks, TTL);
+                await cacheData(hashKey, hashData(marks), TTL);
+                return NextResponse.json({ success: true, data: marks, source: "fresh" });
+            }
+
+            // ✅ Both attempts empty — show error
+            return NextResponse.json({
+                success: false,
+                error: "SRM Academia is slow. Please refresh and try again.",
+            }, { status: 503 });
+
         } catch {
             return NextResponse.json({ success: true, data: [], message: "Marks temporarily unavailable" });
         }
