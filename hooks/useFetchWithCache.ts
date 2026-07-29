@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { getToken, updateName } from "@/lib/session";
+import { getToken, updateName, clearSession } from "@/lib/session";
 
 interface FetchState<T> {
     data: T | null;
@@ -52,19 +52,33 @@ export function useFetchWithCache<T>(
         } catch { }
     };
 
+    const autoLogout = () => {
+        clearSession();
+        window.location.href = '/login';
+    };
+
     const fetchFresh = async (showLoading = false) => {
         if (showLoading) setLoading(true);
         setError(null);
         try {
             const result = await fetchFn();
 
-            // ✅ If result is empty array — retry after 3 seconds (max 3 retries)
+            // ✅ If result is empty array — show expired cache if available
             if (Array.isArray(result) && result.length === 0) {
-                console.warn("⚠️ Empty result — retrying in 3 seconds...");
+                console.warn("⚠️ Empty result — keeping existing data");
+                const expiredCache = getFromCache();
+                if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
+                    setData(expiredCache.data as T);
+                }
                 if (showLoading) setLoading(false);
+
                 if (retryCount.current < 3) {
                     retryCount.current += 1;
-                    setTimeout(() => fetchFresh(showLoading), 3000);
+                    setTimeout(() => fetchFresh(false), 3000);
+                } else {
+                    // ✅ After 3 retries — auto logout
+                    console.warn("⚠️ Max retries reached — logging out");
+                    autoLogout();
                 }
                 return;
             }
@@ -73,6 +87,21 @@ export function useFetchWithCache<T>(
             setData(result as T);
             saveToCache(result as T);
         } catch (err: unknown) {
+            // ✅ On error — show expired cache if available
+            const expiredCache = getFromCache();
+            if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
+                setData(expiredCache.data as T);
+            }
+
+            if (retryCount.current < 3) {
+                retryCount.current += 1;
+                setTimeout(() => fetchFresh(false), 3000);
+            } else {
+                // ✅ After 3 retries — auto logout
+                console.warn("⚠️ Max retries reached — logging out");
+                autoLogout();
+            }
+
             const message = err instanceof Error ? err.message : "Failed to fetch data";
             if (!data) setError(message);
         } finally {
@@ -92,7 +121,7 @@ export function useFetchWithCache<T>(
         const cached = getFromCache();
 
         if (cached) {
-            if (Array.isArray(cached.data) && cached.data.length === 0) {
+            if (Array.isArray(cached.data) && (cached.data as any[]).length === 0) {
                 fetchFresh(true);
                 return;
             }
@@ -102,7 +131,6 @@ export function useFetchWithCache<T>(
 
             const age = Date.now() - cached.timestamp;
             if (age > ttlMs) {
-                // ✅ Auto re-fetch after 3 seconds to get fresh data silently
                 setTimeout(() => fetchFresh(false), 3000);
             }
         } else {
