@@ -1,8 +1,7 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
-import { getTimetableApi, getProfileApi } from "@/lib/api";
+import { getTimetableApi, getProfileApi, getPlannerApi } from "@/lib/api";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Header from "@/components/layout/Header";
@@ -21,6 +20,23 @@ interface TimetableResult {
 interface Student {
     name: string; regNo: string; batch: string; section: string;
 }
+interface PlannerDay {
+    date: string; dayOrder: number | null; note: string;
+}
+interface PlannerData {
+    map: Record<string, PlannerDay>; semester: string;
+}
+
+// ✅ Get today's date in IST
+function getTodayIST(): string {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const y = istNow.getFullYear();
+    const m = String(istNow.getMonth() + 1).padStart(2, "0");
+    const d = String(istNow.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
 
 // ✅ 12 Fixed SRM time slots
 const SRM_SLOTS = [
@@ -38,26 +54,21 @@ const SRM_SLOTS = [
     { label: "Slot 12", start: "05:30", end: "06:10" },
 ];
 
-// ✅ Map course start-end time to which SRM slots it covers
 function getCoveredSlots(startTime: string, endTime: string): number[] {
     const toMin = (t: string) => {
         const [h, m] = t.split(":").map(Number);
         return (h < 7 ? h + 12 : h) * 60 + m;
     };
-
     const courseStart = toMin(startTime);
     const courseEnd = toMin(endTime);
     const covered: number[] = [];
-
     SRM_SLOTS.forEach((slot, i) => {
         const slotStart = toMin(slot.start);
         const slotEnd = toMin(slot.end);
-        // Slot overlaps with course if they share any time
         if (slotStart < courseEnd && slotEnd > courseStart) {
             covered.push(i);
         }
     });
-
     return covered;
 }
 
@@ -69,11 +80,9 @@ async function exportTimetablePDF(
 ) {
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
     const pageW = 297;
     const pageH = 210;
     const margin = 5;
-
     const lightOrange: [number, number, number] = [255, 213, 153];
     const doRowOrange: [number, number, number] = [255, 235, 200];
     const black: [number, number, number] = [0, 0, 0];
@@ -83,18 +92,15 @@ async function exportTimetablePDF(
     const orangeText: [number, number, number] = [200, 90, 0];
     const grayText: [number, number, number] = [100, 100, 100];
 
-    // ── Header ───────────────────────────────────────────────────────────────
     doc.setFillColor(...lightOrange);
     doc.rect(0, 0, pageW, 20, "F");
     doc.setDrawColor(...black);
     doc.setLineWidth(0.4);
     doc.rect(0, 0, pageW, 20, "S");
-
     doc.setTextColor(...darkText);
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.text("CLARIX — Class Timetable", margin + 2, 8);
-
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     const parts: string[] = [];
@@ -105,7 +111,6 @@ async function exportTimetablePDF(
     parts.push(`Date: ${new Date().toLocaleDateString("en-IN")}`);
     doc.text(parts.join("     "), margin + 2, 15);
 
-    // ── Table dimensions ──────────────────────────────────────────────────────
     const tableTop = 22;
     const doColW = 10;
     const slotColW = (pageW - margin * 2 - doColW) / SRM_SLOTS.length;
@@ -113,8 +118,6 @@ async function exportTimetablePDF(
     const totalRows = days.length + 1;
     const rowH = (pageH - tableTop - 5) / totalRows;
 
-    // ── Header row — Slot labels + times ─────────────────────────────────────
-    // DO header
     doc.setFillColor(...lightOrange);
     doc.setDrawColor(...black);
     doc.setLineWidth(0.4);
@@ -124,7 +127,6 @@ async function exportTimetablePDF(
     doc.setFont("helvetica", "bold");
     doc.text("DO", margin + doColW / 2, tableTop + rowH / 2 + 1, { align: "center" });
 
-    // Slot header cells
     SRM_SLOTS.forEach((slot, i) => {
         const x = margin + doColW + i * slotColW;
         doc.setFillColor(...lightOrange);
@@ -140,11 +142,8 @@ async function exportTimetablePDF(
         doc.text(`${slot.start}-${slot.end}`, x + slotColW / 2, tableTop + rowH / 2 + 2, { align: "center" });
     });
 
-    // ── Day Order rows ────────────────────────────────────────────────────────
     days.forEach((day, dayIdx) => {
         const y = tableTop + (dayIdx + 1) * rowH;
-
-        // DO cell
         doc.setFillColor(...doRowOrange);
         doc.setDrawColor(...black);
         doc.setLineWidth(0.4);
@@ -154,7 +153,6 @@ async function exportTimetablePDF(
         doc.setFont("helvetica", "bold");
         doc.text(`DO ${day}`, margin + doColW / 2, y + rowH / 2 + 1, { align: "center" });
 
-        // Draw all 12 empty slot cells first
         const bg = dayIdx % 2 === 0 ? white : lightGray;
         SRM_SLOTS.forEach((_, i) => {
             const x = margin + doColW + i * slotColW;
@@ -164,40 +162,25 @@ async function exportTimetablePDF(
             doc.rect(x, y, slotColW, rowH, "FD");
         });
 
-        // Now draw courses spanning their slots
         const daySlots = timetable[day] || [];
-
-        // Track which slot indices are already filled
         const filledSlots = new Set<number>();
-
         daySlots.forEach(slot => {
             if (!slot.courses.length) return;
             const course = slot.courses[0];
             const coveredIndices = getCoveredSlots(slot.startTime, slot.endTime);
-
             if (coveredIndices.length === 0) return;
-
-            // Skip already filled slots
             if (coveredIndices.some(i => filledSlots.has(i))) return;
             coveredIndices.forEach(i => filledSlots.add(i));
-
-            // Calculate merged cell position and width
             const firstIdx = coveredIndices[0];
             const lastIdx = coveredIndices[coveredIndices.length - 1];
             const cellX = margin + doColW + firstIdx * slotColW;
             const cellW = (lastIdx - firstIdx + 1) * slotColW;
-
-            // Draw merged cell with light background
             doc.setFillColor(...bg);
             doc.setDrawColor(...black);
             doc.setLineWidth(0.4);
             doc.rect(cellX, y, cellW, rowH, "FD");
-
-            // Draw inner content background
             doc.setFillColor(245, 245, 245);
             doc.rect(cellX + 0.5, y + 0.5, cellW - 1, rowH - 1, "F");
-
-            // Subject name with word wrap
             doc.setTextColor(...darkText);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(5.5);
@@ -206,25 +189,20 @@ async function exportTimetablePDF(
             const lineH = 3;
             const totalTextH = lines.length * lineH;
             const startY = y + (rowH - totalTextH) / 2 - 1;
-
             lines.forEach((line: string, li: number) => {
                 doc.text(line, cellX + cellW / 2, startY + li * lineH, { align: "center" });
             });
-
-            // ✅ Room number — increased font size
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(7); // ← increased from 5
+            doc.setFontSize(7);
             doc.setTextColor(...grayText);
             doc.text(course.room, cellX + cellW / 2, y + rowH - 2.5, { align: "center" });
         });
     });
 
-    // ── Footer ────────────────────────────────────────────────────────────────
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5);
     doc.setTextColor(150, 150, 150);
     doc.text("Generated by Clarix — SRM Academia Tracker", pageW / 2, pageH - 1, { align: "center" });
-
     doc.save(`timetable-${profile?.regNo || "clarix"}.pdf`);
 }
 
@@ -243,6 +221,23 @@ export default function TimetablePage() {
         "profile",
         30 * 24 * 60 * 60 * 1000
     );
+
+    const { data: plannerData } = useFetchWithCache<PlannerData>(
+        getPlannerApi as () => Promise<PlannerData>,
+        "planner",
+        15 * 60 * 1000
+    );
+
+    // ✅ Auto-select today's day order
+    useEffect(() => {
+        if (plannerData?.map) {
+            const today = getTodayIST();
+            const todayDayOrder = plannerData.map[today]?.dayOrder;
+            if (todayDayOrder) {
+                setSelectedDay(todayDayOrder);
+            }
+        }
+    }, [plannerData]);
 
     const timetable = data?.timetable ?? {};
     const slots = timetable[selectedDay] ?? [];
@@ -263,6 +258,9 @@ export default function TimetablePage() {
     };
 
     if (loading) return <LoadingScreen />;
+
+    // ✅ Get today's day order for badge
+    const todayDayOrder = plannerData?.map?.[getTodayIST()]?.dayOrder;
 
     return (
         <PageWrapper>
@@ -306,6 +304,12 @@ export default function TimetablePage() {
                             {data.section}
                         </span>
                     )}
+                    {/* ✅ Today's day order badge */}
+                    {todayDayOrder && (
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fff3e0", color: "#ff6f00", border: "1px solid #ffcc80" }}>
+                            Today: DO {todayDayOrder}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -319,8 +323,17 @@ export default function TimetablePage() {
                             background: selectedDay === day ? "#ff6f00" : "white",
                             color: selectedDay === day ? "white" : "#0f172a",
                             transition: "all 0.2s",
+                            position: "relative",
                         }}>
                             {day}
+                            {/* ✅ Today indicator dot */}
+                            {todayDayOrder === day && (
+                                <span style={{
+                                    position: "absolute", top: 2, right: 2,
+                                    width: 6, height: 6, borderRadius: "50%",
+                                    background: selectedDay === day ? "white" : "#ff6f00",
+                                }} />
+                            )}
                         </button>
                     ))}
                 </div>
