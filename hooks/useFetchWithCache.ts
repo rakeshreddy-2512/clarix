@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getToken, updateName } from "@/lib/session";
 
 interface FetchState<T> {
@@ -19,6 +19,7 @@ export function useFetchWithCache<T>(
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const retryCount = useRef(0);
 
     const getStorageKey = () => {
         const token = getToken();
@@ -57,13 +58,18 @@ export function useFetchWithCache<T>(
         try {
             const result = await fetchFn();
 
-            // ✅ If result is empty array — keep existing data
+            // ✅ If result is empty array — retry after 3 seconds (max 3 retries)
             if (Array.isArray(result) && result.length === 0) {
-                console.warn("⚠️ Empty result — keeping existing data");
+                console.warn("⚠️ Empty result — retrying in 3 seconds...");
                 if (showLoading) setLoading(false);
+                if (retryCount.current < 3) {
+                    retryCount.current += 1;
+                    setTimeout(() => fetchFresh(showLoading), 3000);
+                }
                 return;
             }
 
+            retryCount.current = 0;
             setData(result as T);
             saveToCache(result as T);
         } catch (err: unknown) {
@@ -78,6 +84,7 @@ export function useFetchWithCache<T>(
         try {
             localStorage.removeItem(getStorageKey());
         } catch { }
+        retryCount.current = 0;
         fetchFresh(true);
     };
 
