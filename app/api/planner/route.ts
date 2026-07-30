@@ -3,10 +3,26 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { scrapePlanner } from "@/lib/scrapers/planner.scraper";
 import { parsePlanner } from "@/lib/parsers/planner.parser";
 import { getCachedData, cacheData } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
+import { decrypt } from "@/lib/encryption";
 import crypto from "crypto";
 
 function hashData(data: unknown): string {
     return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex");
+}
+
+async function getServiceCookies(): Promise<string | null> {
+    try {
+        const { data } = await supabase
+            .from("service_cookies")
+            .select("cookies_encrypted")
+            .eq("id", 1)
+            .single();
+        if (data?.cookies_encrypted) return decrypt(data.cookies_encrypted);
+        return null;
+    } catch {
+        return null;
+    }
 }
 
 export async function GET(req: NextRequest) {
@@ -44,21 +60,44 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
+        // ✅ Redis empty — try user cookies first
         try {
             const { cookies } = auth.session;
             const htmls = await scrapePlanner(cookies);
             const planner = parsePlanner(htmls);
-            const hash = hashData(planner);
-            await cacheData(cacheKey, planner, TTL);
-            await cacheData(hashKey, hash, TTL);
-            return NextResponse.json({ success: true, data: planner, source: "fresh" });
-        } catch (err: any) {
-            if (err?.message === "SESSION_EXPIRED") {
-                console.log("⚠️ Session expired — returning 401");
-                return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
+
+            if (Object.keys(planner.map).length > 0) {
+                await cacheData(cacheKey, planner, TTL);
+                await cacheData(hashKey, hashData(planner), TTL);
+                return NextResponse.json({ success: true, data: planner, source: "fresh" });
             }
-            return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
+        } catch (err: any) {
+            if (err?.message !== "SESSION_EXPIRED") {
+                console.error("Planner scrape with user cookies failed:", err);
+            }
         }
+
+        // ✅ User cookies failed — try service cookies from Supabase
+        console.log("🔄 Trying service cookies for planner...");
+        try {
+            const serviceCookies = await getServiceCookies();
+            if (serviceCookies) {
+                const htmls = await scrapePlanner(serviceCookies);
+                const planner = parsePlanner(htmls);
+
+                if (Object.keys(planner.map).length > 0) {
+                    await cacheData(cacheKey, planner, TTL);
+                    await cacheData(hashKey, hashData(planner), TTL);
+                    console.log(`✅ Planner loaded from service cookies — ${Object.keys(planner.map).length} days`);
+                    return NextResponse.json({ success: true, data: planner, source: "service" });
+                }
+            }
+        } catch (err: any) {
+            console.error("Planner scrape with service cookies failed:", err);
+        }
+
+        return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
+
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
     }
