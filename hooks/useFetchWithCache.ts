@@ -25,10 +25,11 @@ export function useFetchWithCache<T>(
         return `clarix_${CACHE_VERSION}_${cacheKey}_${token}`;
     };
 
-    // ✅ Check if data is empty (array or object like planner)
+    // ✅ Check if data is empty — arrays or planner object
     const isEmpty = (data: unknown): boolean => {
         if (Array.isArray(data) && data.length === 0) return true;
-        if (data && typeof data === 'object' && 'map' in data) {
+        // ✅ Only check planner object — NOT arrays (arrays have .map method too)
+        if (!Array.isArray(data) && data && typeof data === 'object' && 'map' in data) {
             const map = (data as any).map;
             if (!map || Object.keys(map).length === 0) return true;
         }
