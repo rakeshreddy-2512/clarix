@@ -18,24 +18,20 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `marks:${regNo}`;
         const hashKey = `marks:${regNo}:hash`;
-        const TTL = 3600; // ✅ 1 hour
+        const TTL = 3600;
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
-            // ✅ Return cached data immediately, sync in background
             (async () => {
                 try {
                     const html = await scrapeAttendanceAndMarks(cookies);
                     const freshMarks = parseMarks(html);
-
                     if (freshMarks.length === 0) {
                         console.log("⚠️ Fresh marks is empty — keeping cached data");
                         return;
                     }
-
                     const freshHash = hashData(freshMarks);
                     const cachedHash = await getCachedData<string>(hashKey);
-
                     if (freshHash !== cachedHash) {
                         await cacheData(cacheKey, freshMarks, TTL);
                         await cacheData(hashKey, freshHash, TTL);
@@ -45,21 +41,21 @@ export async function GET(req: NextRequest) {
                             await cacheData(`attendance:${regNo}:hash`, hashData(freshAttendance), TTL);
                         }
                     }
-                } catch (err) { console.error(`Background marks sync failed:`, err); }
+                } catch (err: any) {
+                    if (err?.message === "SESSION_EXPIRED") {
+                        console.log("⚠️ Session expired during background sync");
+                    } else {
+                        console.error(`Background marks sync failed:`, err);
+                    }
+                }
             })();
 
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
         try {
-            let marks: any[] = [];
-
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                const html = await scrapeAttendanceAndMarks(cookies);
-                marks = parseMarks(html);
-                if (marks.length > 0) break;
-                console.log(`⚠️ Marks empty — attempt ${attempt}/2`);
-            }
+            const html = await scrapeAttendanceAndMarks(cookies);
+            const marks = parseMarks(html);
 
             if (marks.length > 0) {
                 await cacheData(cacheKey, marks, TTL);
@@ -72,8 +68,12 @@ export async function GET(req: NextRequest) {
                 error: "SRM Academia is slow. Please try again.",
             }, { status: 503 });
 
-        } catch {
-            return NextResponse.json({ success: true, data: [], message: "Marks temporarily unavailable" });
+        } catch (err: any) {
+            if (err?.message === "SESSION_EXPIRED") {
+                console.log("⚠️ Session expired — returning 401");
+                return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
+            }
+            return NextResponse.json({ success: false, error: "Marks temporarily unavailable" }, { status: 503 });
         }
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch marks" }, { status: 500 });

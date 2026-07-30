@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { getToken, updateName, clearSession } from "@/lib/session";
 
 interface FetchState<T> {
@@ -9,7 +9,7 @@ interface FetchState<T> {
     refetch: () => void;
 }
 
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 
 export function useFetchWithCache<T>(
     fetchFn: () => Promise<T>,
@@ -19,7 +19,6 @@ export function useFetchWithCache<T>(
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const retryCount = useRef(0);
 
     const getStorageKey = () => {
         const token = getToken();
@@ -52,57 +51,40 @@ export function useFetchWithCache<T>(
         } catch { }
     };
 
-    const autoLogout = () => {
-        clearSession();
-        window.location.href = '/login';
-    };
-
     const fetchFresh = async (showLoading = false) => {
         if (showLoading) setLoading(true);
         setError(null);
         try {
             const result = await fetchFn();
 
-            // ✅ If result is empty array — show expired cache if available
+            // ✅ If empty — show expired cache
             if (Array.isArray(result) && result.length === 0) {
-                console.warn("⚠️ Empty result — keeping existing data");
                 const expiredCache = getFromCache();
                 if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
                     setData(expiredCache.data as T);
                 }
-                if (showLoading) setLoading(false);
-
-                if (retryCount.current < 3) {
-                    retryCount.current += 1;
-                    setTimeout(() => fetchFresh(false), 3000);
-                } else {
-                    // ✅ After 3 retries — auto logout
-                    console.warn("⚠️ Max retries reached — logging out");
-                    autoLogout();
-                }
                 return;
             }
 
-            retryCount.current = 0;
             setData(result as T);
             saveToCache(result as T);
-        } catch (err: unknown) {
-            // ✅ On error — show expired cache if available
+        } catch (err: any) {
+            const message = err instanceof Error ? err.message : "Failed to fetch data";
+
+            // ✅ Session expired — auto logout
+            if (message.includes("Session expired") || message.includes("Unauthorized")) {
+                console.warn("⚠️ Session expired — logging out");
+                clearSession();
+                window.location.href = '/login';
+                return;
+            }
+
+            // ✅ Other errors — show expired cache
             const expiredCache = getFromCache();
             if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
                 setData(expiredCache.data as T);
             }
 
-            if (retryCount.current < 3) {
-                retryCount.current += 1;
-                setTimeout(() => fetchFresh(false), 3000);
-            } else {
-                // ✅ After 3 retries — auto logout
-                console.warn("⚠️ Max retries reached — logging out");
-                autoLogout();
-            }
-
-            const message = err instanceof Error ? err.message : "Failed to fetch data";
             if (!data) setError(message);
         } finally {
             if (showLoading) setLoading(false);
@@ -113,7 +95,6 @@ export function useFetchWithCache<T>(
         try {
             localStorage.removeItem(getStorageKey());
         } catch { }
-        retryCount.current = 0;
         fetchFresh(true);
     };
 
@@ -131,7 +112,7 @@ export function useFetchWithCache<T>(
 
             const age = Date.now() - cached.timestamp;
             if (age > ttlMs) {
-                setTimeout(() => fetchFresh(false), 3000);
+                fetchFresh(false);
             }
         } else {
             fetchFresh(true);

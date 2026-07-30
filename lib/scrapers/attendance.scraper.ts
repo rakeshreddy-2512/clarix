@@ -19,11 +19,13 @@ export async function scrapeAttendanceAndMarks(cookies: string): Promise<string>
             });
             const html = res.data as string;
             console.log(`📄 Attendance response: ${html.length} chars (attempt ${attempt})`);
-            if (html.length < 5000 || html.includes("Error-msg")) {
-                throw new Error("Invalid response");
+
+            if (html.length < 10000 || html.includes("Error-msg")) {
+                throw new Error("SESSION_EXPIRED");
             }
             return html;
-        } catch {
+        } catch (err: any) {
+            if (err?.message === "SESSION_EXPIRED") throw err;
             console.log(`⚠️ My_Attendance failed — attempt ${attempt}/2`);
         }
     }
@@ -41,11 +43,13 @@ export async function scrapeAttendanceAndMarks(cookies: string): Promise<string>
         });
         const html = res.data as string;
         console.log(`📄 Fallback response: ${html.length} chars`);
-        if (html.length < 500 || html.includes("Error-msg")) {
-            throw new Error("Session expired — please login again");
+
+        if (html.length < 10000 || html.includes("Error-msg")) {
+            throw new Error("SESSION_EXPIRED");
         }
         return html;
-    } catch {
-        throw new Error("Session expired — please login again");
+    } catch (err: any) {
+        if (err?.message === "SESSION_EXPIRED") throw err;
+        throw new Error("SESSION_EXPIRED");
     }
 }
