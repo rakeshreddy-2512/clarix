@@ -25,23 +25,30 @@ async function getServiceCookies(): Promise<string | null> {
     }
 }
 
+async function fetchFreshPlanner(cookies: string) {
+    const htmls = await scrapePlanner(cookies);
+    const planner = parsePlanner(htmls);
+    return planner;
+}
+
 export async function GET(req: NextRequest) {
     try {
         const auth = await getSessionFromRequest(req);
         if (!auth) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-        // ✅ Shared cache — same planner for ALL users
         const cacheKey = `planner:shared`;
         const hashKey = `planner:shared:hash`;
         const TTL = 86400; // 24 hours
 
-        const cached = await getCachedData(cacheKey);
-        if (cached) {
+        const cached = await getCachedData<any>(cacheKey);
+
+        // ✅ Only use cache if it has actual data
+        if (cached && Object.keys(cached.map || {}).length > 0) {
             (async () => {
                 try {
                     const { cookies } = auth.session;
-                    const htmls = await scrapePlanner(cookies);
-                    const freshPlanner = parsePlanner(htmls);
+                    const freshPlanner = await fetchFreshPlanner(cookies);
+                    if (Object.keys(freshPlanner.map || {}).length === 0) return;
                     const freshHash = hashData(freshPlanner);
                     const cachedHash = await getCachedData<string>(hashKey);
                     if (freshHash !== cachedHash) {
@@ -60,32 +67,30 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
-        // ✅ Redis empty — try user cookies first
+        // ✅ Cache empty or 0 days — try user cookies first
+        console.log("⚠️ Planner cache empty — fetching fresh...");
         try {
             const { cookies } = auth.session;
-            const htmls = await scrapePlanner(cookies);
-            const planner = parsePlanner(htmls);
-
-            if (Object.keys(planner.map).length > 0) {
+            const planner = await fetchFreshPlanner(cookies);
+            if (Object.keys(planner.map || {}).length > 0) {
                 await cacheData(cacheKey, planner, TTL);
                 await cacheData(hashKey, hashData(planner), TTL);
+                console.log(`✅ Planner loaded from user cookies — ${Object.keys(planner.map).length} days`);
                 return NextResponse.json({ success: true, data: planner, source: "fresh" });
             }
         } catch (err: any) {
             if (err?.message !== "SESSION_EXPIRED") {
                 console.error("Planner scrape with user cookies failed:", err);
             }
+            console.log("⚠️ User cookies failed — trying service cookies...");
         }
 
         // ✅ User cookies failed — try service cookies from Supabase
-        console.log("🔄 Trying service cookies for planner...");
         try {
             const serviceCookies = await getServiceCookies();
             if (serviceCookies) {
-                const htmls = await scrapePlanner(serviceCookies);
-                const planner = parsePlanner(htmls);
-
-                if (Object.keys(planner.map).length > 0) {
+                const planner = await fetchFreshPlanner(serviceCookies);
+                if (Object.keys(planner.map || {}).length > 0) {
                     await cacheData(cacheKey, planner, TTL);
                     await cacheData(hashKey, hashData(planner), TTL);
                     console.log(`✅ Planner loaded from service cookies — ${Object.keys(planner.map).length} days`);
