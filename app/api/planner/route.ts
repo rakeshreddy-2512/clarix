@@ -9,13 +9,6 @@ function hashData(data: unknown): string {
     return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex");
 }
 
-function secondsUntilMidnight(): number {
-    const now = new Date();
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    return Math.floor((midnight.getTime() - now.getTime()) / 1000);
-}
-
 export async function GET(req: NextRequest) {
     try {
         const auth = await getSessionFromRequest(req);
@@ -24,9 +17,9 @@ export async function GET(req: NextRequest) {
         // ✅ Shared cache — same planner for ALL users
         const cacheKey = `planner:shared`;
         const hashKey = `planner:shared:hash`;
-        const ttl = secondsUntilMidnight();
-        const cached = await getCachedData(cacheKey);
+        const TTL = 86400; // ✅ 24 hours
 
+        const cached = await getCachedData(cacheKey);
         if (cached) {
             (async () => {
                 try {
@@ -37,8 +30,8 @@ export async function GET(req: NextRequest) {
                     const cachedHash = await getCachedData<string>(hashKey);
                     if (freshHash !== cachedHash) {
                         console.log(`🔄 Planner changed, updating shared cache...`);
-                        await cacheData(cacheKey, freshPlanner, ttl);
-                        await cacheData(hashKey, freshHash, ttl);
+                        await cacheData(cacheKey, freshPlanner, TTL);
+                        await cacheData(hashKey, freshHash, TTL);
                     }
                 } catch (err) { console.error(`Background planner sync failed:`, err); }
             })();
@@ -49,8 +42,8 @@ export async function GET(req: NextRequest) {
         const htmls = await scrapePlanner(cookies);
         const planner = parsePlanner(htmls);
         const hash = hashData(planner);
-        await cacheData(cacheKey, planner, ttl);
-        await cacheData(hashKey, hash, ttl);
+        await cacheData(cacheKey, planner, TTL);
+        await cacheData(hashKey, hash, TTL);
         return NextResponse.json({ success: true, data: planner, source: "fresh" });
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
