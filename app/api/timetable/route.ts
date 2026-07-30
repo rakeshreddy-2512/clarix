@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `timetable:${regNo}`;
         const hashKey = `timetable:${regNo}:hash`;
-        const TTL = 86400; // ✅ 24 hours
+        const TTL = 86400; // 24 hours
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
@@ -31,17 +31,31 @@ export async function GET(req: NextRequest) {
                         await cacheData(cacheKey, freshResult, TTL);
                         await cacheData(hashKey, freshHash, TTL);
                     }
-                } catch (err) { console.error(`Background timetable sync failed:`, err); }
+                } catch (err: any) {
+                    if (err?.message === "SESSION_EXPIRED") {
+                        console.log("⚠️ Session expired during background timetable sync");
+                    } else {
+                        console.error(`Background timetable sync failed:`, err);
+                    }
+                }
             })();
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
-        const html = await scrapeTimetable(cookies);
-        const result = parseTimetable(html);
-        const hash = hashData(result);
-        await cacheData(cacheKey, result, TTL);
-        await cacheData(hashKey, hash, TTL);
-        return NextResponse.json({ success: true, data: result, source: "fresh" });
+        try {
+            const html = await scrapeTimetable(cookies);
+            const result = parseTimetable(html);
+            const hash = hashData(result);
+            await cacheData(cacheKey, result, TTL);
+            await cacheData(hashKey, hash, TTL);
+            return NextResponse.json({ success: true, data: result, source: "fresh" });
+        } catch (err: any) {
+            if (err?.message === "SESSION_EXPIRED") {
+                console.log("⚠️ Session expired — returning 401");
+                return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
+            }
+            return NextResponse.json({ success: false, error: "Failed to fetch timetable" }, { status: 500 });
+        }
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch timetable" }, { status: 500 });
     }

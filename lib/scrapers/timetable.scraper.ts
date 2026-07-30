@@ -14,6 +14,8 @@ export async function scrapeTimetable(cookies: string): Promise<string> {
     });
     const html = res.data as string;
     console.log(`📄 Timetable response: ${html.length} chars`);
-    if (html.length < 500) throw new Error("Session expired — please login again");
+
+    // ✅ 8337 chars = session expired redirect page
+    if (html.length < 10000) throw new Error("SESSION_EXPIRED");
     return html;
 }

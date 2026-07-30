@@ -18,7 +18,9 @@ export async function scrapePlanner(cookies: string): Promise<string[]> {
                 },
             });
             const html = res.data as string;
-            if (html.length > 1000) results.push(html);
+            // ✅ 8337 chars = session expired redirect page
+            if (html.length > 10000) results.push(html);
+            else console.log(`⚠️ Skipping ${url} — too small (${html.length} chars)`);
         } catch {
             console.log(`❌ Failed to fetch ${url}`);
         }

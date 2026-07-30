@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         // ✅ Shared cache — same planner for ALL users
         const cacheKey = `planner:shared`;
         const hashKey = `planner:shared:hash`;
-        const TTL = 86400; // ✅ 24 hours
+        const TTL = 86400; // 24 hours
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
@@ -33,18 +33,32 @@ export async function GET(req: NextRequest) {
                         await cacheData(cacheKey, freshPlanner, TTL);
                         await cacheData(hashKey, freshHash, TTL);
                     }
-                } catch (err) { console.error(`Background planner sync failed:`, err); }
+                } catch (err: any) {
+                    if (err?.message === "SESSION_EXPIRED") {
+                        console.log("⚠️ Session expired during background planner sync");
+                    } else {
+                        console.error(`Background planner sync failed:`, err);
+                    }
+                }
             })();
             return NextResponse.json({ success: true, data: cached, source: "cache" });
         }
 
-        const { cookies } = auth.session;
-        const htmls = await scrapePlanner(cookies);
-        const planner = parsePlanner(htmls);
-        const hash = hashData(planner);
-        await cacheData(cacheKey, planner, TTL);
-        await cacheData(hashKey, hash, TTL);
-        return NextResponse.json({ success: true, data: planner, source: "fresh" });
+        try {
+            const { cookies } = auth.session;
+            const htmls = await scrapePlanner(cookies);
+            const planner = parsePlanner(htmls);
+            const hash = hashData(planner);
+            await cacheData(cacheKey, planner, TTL);
+            await cacheData(hashKey, hash, TTL);
+            return NextResponse.json({ success: true, data: planner, source: "fresh" });
+        } catch (err: any) {
+            if (err?.message === "SESSION_EXPIRED") {
+                console.log("⚠️ Session expired — returning 401");
+                return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
+            }
+            return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
+        }
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch planner" }, { status: 500 });
     }
