@@ -25,11 +25,24 @@ export function useFetchWithCache<T>(
         return `clarix_${CACHE_VERSION}_${cacheKey}_${token}`;
     };
 
+    // ✅ Check if data is empty (array or object like planner)
+    const isEmpty = (data: unknown): boolean => {
+        if (Array.isArray(data) && data.length === 0) return true;
+        if (data && typeof data === 'object' && 'map' in data) {
+            const map = (data as any).map;
+            if (!map || Object.keys(map).length === 0) return true;
+        }
+        return false;
+    };
+
     const getFromCache = (): { data: T; timestamp: number } | null => {
         try {
             const stored = localStorage.getItem(getStorageKey());
             if (!stored) return null;
-            return JSON.parse(stored);
+            const parsed = JSON.parse(stored);
+            // ✅ If cached data is empty — treat as no cache
+            if (isEmpty(parsed.data)) return null;
+            return parsed;
         } catch {
             return null;
         }
@@ -37,7 +50,8 @@ export function useFetchWithCache<T>(
 
     const saveToCache = (data: T) => {
         try {
-            if (Array.isArray(data) && data.length === 0) return;
+            // ✅ Never cache empty data
+            if (isEmpty(data)) return;
 
             localStorage.setItem(getStorageKey(), JSON.stringify({
                 data,
@@ -57,10 +71,10 @@ export function useFetchWithCache<T>(
         try {
             const result = await fetchFn();
 
-            // ✅ If empty — show expired cache
-            if (Array.isArray(result) && result.length === 0) {
+            // ✅ If empty — show expired cache if available
+            if (isEmpty(result)) {
                 const expiredCache = getFromCache();
-                if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
+                if (expiredCache && !isEmpty(expiredCache.data)) {
                     setData(expiredCache.data as T);
                 }
                 return;
@@ -81,7 +95,7 @@ export function useFetchWithCache<T>(
 
             // ✅ Other errors — show expired cache
             const expiredCache = getFromCache();
-            if (expiredCache && Array.isArray(expiredCache.data) && (expiredCache.data as any[]).length > 0) {
+            if (expiredCache && !isEmpty(expiredCache.data)) {
                 setData(expiredCache.data as T);
             }
 
@@ -102,11 +116,6 @@ export function useFetchWithCache<T>(
         const cached = getFromCache();
 
         if (cached) {
-            if (Array.isArray(cached.data) && (cached.data as any[]).length === 0) {
-                fetchFresh(true);
-                return;
-            }
-
             setData(cached.data);
             setLoading(false);
 
