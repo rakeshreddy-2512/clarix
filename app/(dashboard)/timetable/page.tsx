@@ -159,7 +159,7 @@ async function exportTimetablePDF(timetable: Timetable, batch: number, section: 
 
 // ✅ JPEG — draw directly to canvas
 async function exportTimetableJPEG(timetable: Timetable, batch: number, section: string, profile: Student | null) {
-    const scale = 4;
+    const scale = 8;
     const pageW = 297 * scale, pageH = 210 * scale, margin = 5 * scale;
     const canvas = document.createElement("canvas");
     canvas.width = pageW; canvas.height = pageH;
@@ -261,8 +261,8 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
 
     // ✅ Download
     const link = document.createElement("a");
-    link.download = `timetable-${profile?.regNo || "clarix"}.jpeg`;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.download = `timetable-${profile?.regNo || "clarix"}.png`;
+    link.href = canvas.toDataURL("image/png");
     link.click();
 }
 
@@ -369,7 +369,7 @@ export default function TimetablePage() {
                                     onMouseEnter={e => (e.currentTarget.style.background = "#fff3e0")}
                                     onMouseLeave={e => (e.currentTarget.style.background = "none")}
                                 >
-                                    {fmt === "pdf" ? "📄 PDF" : "🖼️ JPEG"}
+                                    {fmt === "pdf" ? ".pdf" : ".png"}
                                 </button>
                             ))}
                         </div>
