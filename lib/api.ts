@@ -14,6 +14,11 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
         },
     });
     const data = await response.json();
+
+    // ✅ Only throw session expired on explicit 401
+    if (response.status === 401) {
+        throw new Error("Session expired");
+    }
     if (!response.ok) throw new Error(data.error || "Something went wrong");
     return data;
 }

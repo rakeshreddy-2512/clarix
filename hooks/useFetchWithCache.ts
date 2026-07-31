@@ -41,7 +41,6 @@ export function useFetchWithCache<T>(
             const stored = localStorage.getItem(getStorageKey());
             if (!stored) return null;
             const parsed = JSON.parse(stored);
-            // ✅ If cached data is empty — treat as no cache
             if (isEmpty(parsed.data)) return null;
             return parsed;
         } catch {
@@ -51,7 +50,6 @@ export function useFetchWithCache<T>(
 
     const saveToCache = (data: T) => {
         try {
-            // ✅ Never cache empty data
             if (isEmpty(data)) return;
 
             localStorage.setItem(getStorageKey(), JSON.stringify({
@@ -72,7 +70,6 @@ export function useFetchWithCache<T>(
         try {
             const result = await fetchFn();
 
-            // ✅ If empty — show expired cache if available
             if (isEmpty(result)) {
                 const expiredCache = getFromCache();
                 if (expiredCache && !isEmpty(expiredCache.data)) {
@@ -86,8 +83,8 @@ export function useFetchWithCache<T>(
         } catch (err: any) {
             const message = err instanceof Error ? err.message : "Failed to fetch data";
 
-            // ✅ Session expired — auto logout
-            if (message.includes("Session expired") || message.includes("Unauthorized")) {
+            // ✅ Only logout on explicit "Session expired" (from 401 status)
+            if (message === "Session expired") {
                 console.warn("⚠️ Session expired — logging out");
                 clearSession();
                 window.location.href = '/login';
