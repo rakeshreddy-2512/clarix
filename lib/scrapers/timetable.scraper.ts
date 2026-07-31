@@ -15,7 +15,10 @@ export async function scrapeTimetable(cookies: string): Promise<string> {
     const html = res.data as string;
     console.log(`📄 Timetable response: ${html.length} chars`);
 
-    // ✅ 8337 chars = session expired redirect page
-    if (html.length < 10000) throw new Error("SESSION_EXPIRED");
+    // ✅ Check content instead of size
+    // Session expired page doesn't have pageSanitizer
+    if (!html.includes("pageSanitizer") && !html.includes("zmlvalue")) {
+        throw new Error("SESSION_EXPIRED");
+    }
     return html;
 }
