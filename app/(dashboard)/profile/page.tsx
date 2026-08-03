@@ -111,7 +111,7 @@ export default function ProfilePage() {
 
     return (
         <PageWrapper>
-            {/* ✅ Header with Support button (mobile only) */}
+            {/* ✅ Header — no support button (desktop has it in sidebar, mobile has it here only) */}
             <div style={{ padding: "24px 20px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <motion.h1
                     initial={{ opacity: 0, y: -8 }}
@@ -120,13 +120,11 @@ export default function ProfilePage() {
                 >
                     Profile
                 </motion.h1>
-                <motion.a
+                {/* ✅ Support button — mobile only */}
+                
                     href="https://ko-fi.com/yolooo12"
                     target="_blank"
                     rel="noopener noreferrer"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    whileTap={{ scale: 0.95 }}
                     className="md:hidden"
                     style={{
                         display: "flex", alignItems: "center", gap: 6,
@@ -138,7 +136,7 @@ export default function ProfilePage() {
                     }}
                 >
                     ☕ Support
-                </motion.a>
+                </a>
             </div>
 
             {error && (
