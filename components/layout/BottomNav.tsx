@@ -61,8 +61,8 @@ export default function BottomNav() {
                         maxWidth: "500px",
                         position: "relative",
                         overflow: "hidden",
-                        paddingTop: "28px",
-                        paddingBottom: "28px",
+                        paddingTop: "18px",
+                        paddingBottom: "18px",
                     }}
                 >
                     <div className="star star-1" />
@@ -78,7 +78,7 @@ export default function BottomNav() {
                             <Link key={to} href={to} className="flex-1" style={{ position: "relative", zIndex: 1 }}>
                                 <motion.div
                                     whileTap={{ scale: 0.9 }}
-                                    className="flex flex-col items-center gap-2 py-3 rounded-2xl relative"
+                                    className="flex flex-col items-center gap-1 py-2 rounded-2xl relative"
                                 >
                                     {isActive && (
                                         <motion.div
