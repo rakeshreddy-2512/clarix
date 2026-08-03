@@ -6,8 +6,10 @@ import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getProfileApi } from "@/lib/api";
 import { Student } from "@/utils/types";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Bell, BellOff, ExternalLink } from "lucide-react";
+import dynamic from "next/dynamic";
+const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
 import { getToken } from "@/lib/session";
 
 interface NotificationSettings {
@@ -27,6 +29,7 @@ export default function ProfilePage() {
 
     const [notifSettings, setNotifSettings] = useState<NotificationSettings | null>(null);
     const [notifLoading, setNotifLoading] = useState(true);
+    const [supportOpen, setSupportOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -121,6 +124,7 @@ export default function ProfilePage() {
 
     return (
         <PageWrapper>
+            <AnimatePresence>{supportOpen && <SupportModal onClose={() => setSupportOpen(false)} />}</AnimatePresence>
             <div style={{ padding: "24px 20px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <motion.h1
                     initial={{ opacity: 0, y: -8 }}
@@ -129,6 +133,7 @@ export default function ProfilePage() {
                 >
                     Profile
                 </motion.h1>
+                <button onClick={() => setSupportOpen(true)} className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #ff5f5f, #ff9800)", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(255,95,95,0.35)" }}>Support</button>
             </div>
 
             {error && (

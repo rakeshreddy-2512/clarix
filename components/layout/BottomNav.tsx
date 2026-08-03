@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -41,10 +43,12 @@ const logoStyles = `
 export default function BottomNav() {
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [supportOpen, setSupportOpen] = useState(false);
 
     return (
         <>
             <style>{logoStyles}</style>
+            <AnimatePresence>{supportOpen && <SupportModal onClose={() => setSupportOpen(false)} />}</AnimatePresence>
 
             {/* ── MOBILE bottom nav ── */}
             <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-8 px-4 md:hidden">
@@ -228,10 +232,9 @@ export default function BottomNav() {
 
                             {/* Support Clarix */}
                             <div style={{ marginTop: "auto", paddingTop: 16, position: "relative", zIndex: 1 }}>
-                                <a href="https://ko-fi.com/yolooo12" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", textDecoration: "none", cursor: "pointer" }}>
-                                    <span style={{ fontSize: 16 }}>☕</span>
+                                <button onClick={() => setSupportOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", width: "100%", transition: "all 0.15s" }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>Support Clarix</span>
-                                </a>
+                                </button>
                             </div>
                         </motion.nav>
                     )}
