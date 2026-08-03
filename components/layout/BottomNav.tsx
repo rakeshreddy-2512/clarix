@@ -47,12 +47,12 @@ export default function BottomNav() {
             <style>{logoStyles}</style>
 
             {/* ── MOBILE bottom nav ── */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-8 px-4 md:hidden">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-10 px-4 md:hidden">
                 <motion.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    className="flex items-center justify-around px-4 py-8 rounded-3xl"
+                    className="flex items-center justify-around px-4 py-10 rounded-3xl"
                     style={{
                         background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
                         border: "1px solid rgba(255,255,255,0.1)",
