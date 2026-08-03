@@ -162,7 +162,7 @@ export default function SupportModal({ onClose }: SupportModalProps) {
                         border: "1px solid rgba(255,255,255,0.2)",
                         borderRadius: 8, width: 28, height: 28,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: "pointer", zIndex: 1,
+                        cursor: "pointer", zIndex: 10,
                     }}
                 >
                     <X size={14} color="rgba(255,255,255,0.7)" />
