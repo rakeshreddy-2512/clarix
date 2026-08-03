@@ -24,6 +24,7 @@ export default function ProfilePage() {
         "profile",
         30 * 24 * 60 * 60 * 1000
     );
+
     const [notifSettings, setNotifSettings] = useState<NotificationSettings | null>(null);
     const [notifLoading, setNotifLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -59,9 +60,14 @@ export default function ProfilePage() {
                 setNotifLoading(false);
             }
         }
+
         fetchSettings();
+
+        // ✅ Re-fetch when user comes back to tab after connecting Telegram
         const handleVisibilityChange = () => {
-            if (document.visibilityState === "visible") fetchSettings();
+            if (document.visibilityState === "visible") {
+                fetchSettings();
+            }
         };
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -72,9 +78,12 @@ export default function ProfilePage() {
         try {
             const token = getToken();
             const newSettings = { ...notifSettings, ...updated };
+
+            // ✅ Always clear telegram_chat_id when toggling ON or OFF
             if (updated.notifications_on === false || updated.notifications_on === true) {
                 newSettings.telegram_chat_id = null;
             }
+
             await fetch("/api/notifications", {
                 method: "POST",
                 headers: {
@@ -93,6 +102,7 @@ export default function ProfilePage() {
 
     function handleToggle() {
         if (notifSettings?.notifications_on) {
+            // ✅ Show confirmation before turning off
             if (window.confirm(
                 "⚠️ Turning off will disconnect your Telegram completely.\n\nTo enable reminders again, you'll need to reconnect Telegram from scratch.\n\nAre you sure you want to turn off?"
             )) {
@@ -111,7 +121,6 @@ export default function ProfilePage() {
 
     return (
         <PageWrapper>
-            {/* ✅ Header — no support button (desktop has it in sidebar, mobile has it here only) */}
             <div style={{ padding: "24px 20px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <motion.h1
                     initial={{ opacity: 0, y: -8 }}
@@ -120,23 +129,6 @@ export default function ProfilePage() {
                 >
                     Profile
                 </motion.h1>
-                {/* ✅ Support button — mobile only */}
-                
-                    href="https://ko-fi.com/yolooo12"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="md:hidden"
-                    style={{
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "8px 14px", borderRadius: 12,
-                        background: "linear-gradient(135deg, #ff5f5f, #ff9800)",
-                        color: "white", fontSize: 13, fontWeight: 700,
-                        textDecoration: "none",
-                        boxShadow: "0 2px 8px rgba(255,95,95,0.35)",
-                    }}
-                >
-                    ☕ Support
-                </a>
             </div>
 
             {error && (
@@ -155,7 +147,7 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            {/* Telegram Notifications Card */}
+            {/* ── Telegram Notifications Card ── */}
             {!notifLoading && (
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -170,6 +162,7 @@ export default function ProfilePage() {
                         border: "1px solid #f1f5f9",
                     }}
                 >
+                    {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
@@ -187,6 +180,8 @@ export default function ProfilePage() {
                                 <p style={{ fontSize: 12, color: "#94a3b8" }}>via Telegram</p>
                             </div>
                         </div>
+
+                        {/* Toggle switch */}
                         <button
                             onClick={handleToggle}
                             disabled={saving}
@@ -208,8 +203,10 @@ export default function ProfilePage() {
                         </button>
                     </div>
 
+                    {/* Only show content when notifications are ON */}
                     {notifSettings?.notifications_on && (
                         <>
+                            {/* Telegram connection status */}
                             {notifSettings?.telegram_chat_id ? (
                                 <div style={{
                                     padding: "10px 14px", borderRadius: 12,
@@ -218,7 +215,9 @@ export default function ProfilePage() {
                                     marginBottom: 16,
                                 }}>
                                     <span style={{ fontSize: 16 }}>✅</span>
-                                    <p style={{ fontSize: 13, color: "#15803d", fontWeight: 600 }}>Telegram connected</p>
+                                    <p style={{ fontSize: 13, color: "#15803d", fontWeight: 600 }}>
+                                        Telegram connected
+                                    </p>
                                 </div>
                             ) : (
                                 <div style={{ marginBottom: 16 }}>
@@ -244,6 +243,7 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
+                            {/* Reminder timing options */}
                             {notifSettings?.telegram_chat_id && (
                                 <div>
                                     <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -256,7 +256,8 @@ export default function ProfilePage() {
                                     ].map(({ key, label }) => (
                                         <div key={key} style={{
                                             display: "flex", alignItems: "center", justifyContent: "space-between",
-                                            padding: "10px 0", borderBottom: "1px solid #f1f5f9",
+                                            padding: "10px 0",
+                                            borderBottom: "1px solid #f1f5f9",
                                         }}>
                                             <p style={{ fontSize: 14, color: "#0f172a", fontWeight: 500 }}>{label}</p>
                                             <button
