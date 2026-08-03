@@ -225,6 +225,14 @@ export default function BottomNav() {
                                     );
                                 })}
                             </div>
+
+                            {/* Support Clarix */}
+                            <div style={{ marginTop: "auto", paddingTop: 16, position: "relative", zIndex: 1 }}>
+                                <a href="https://ko-fi.com/yolooo12" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", textDecoration: "none", cursor: "pointer" }}>
+                                    <span style={{ fontSize: 16 }}>☕</span>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>Support Clarix</span>
+                                </a>
+                            </div>
                         </motion.nav>
                     )}
                 </AnimatePresence>
