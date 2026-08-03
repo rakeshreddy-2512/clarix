@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { saveSession, getToken, getName, clearSession, isLoggedIn } from "@/lib/session";
 import { loginApi, loginForceTerminateApi, logoutApi, prefetchApi, lookupApi } from "@/lib/api";
 
-// ✅ Module-level globals — survive React Strict Mode double mount
 let globalPrefetchDone = false;
 let globalSessionId: string | null = null;
 let globalLookupDone = false;
@@ -21,21 +20,13 @@ export function useAuth() {
     useEffect(() => {
         setAuthenticated(isLoggedIn());
         setName(getName());
-
-        // ✅ Listen for profile name updates from useFetchWithCache
-        const handleSessionUpdate = () => {
-            setName(getName());
-        };
+        const handleSessionUpdate = () => { setName(getName()); };
         window.addEventListener("session-updated", handleSessionUpdate);
         return () => window.removeEventListener("session-updated", handleSessionUpdate);
     }, []);
 
-    // ─── STEP 1+2: Call when login page loads ────────────────────────────────
     async function prefetch() {
-        if (globalPrefetchDone) {
-            console.log("⏭️ Prefetch already done, skipping");
-            return;
-        }
+        if (globalPrefetchDone) { console.log("⏭️ Prefetch already done, skipping"); return; }
         globalPrefetchDone = true;
         console.log("🔄 Prefetching SRM session...");
         const sessionId = await prefetchApi();
@@ -47,19 +38,12 @@ export function useAuth() {
         }
     }
 
-    // ─── STEP 3: Call when password field is focused ──────────────────────────
     async function lookup(username: string) {
         if (globalLookupDone) return;
         if (!username) return;
         globalLookupDone = true;
-
         const sessionId = globalSessionId;
-        if (!sessionId) {
-            console.log("⚠️ No sessionId yet, skipping lookup");
-            globalLookupDone = false;
-            return;
-        }
-
+        if (!sessionId) { console.log("⚠️ No sessionId yet, skipping lookup"); globalLookupDone = false; return; }
         console.log("🔍 Looking up user:", username);
         const result = await lookupApi(sessionId, username);
         if (!result.success) {
@@ -71,8 +55,7 @@ export function useAuth() {
         }
     }
 
-    // ─── STEP 4+5: Call on form submit ───────────────────────────────────────
-    async function login(username: string, password: string) {
+    async function login(username: string, password: string, onSuccess?: (username: string) => boolean) {
         setLoading(true);
         setError("");
         setSessionExceeded(false);
@@ -85,7 +68,9 @@ export function useAuth() {
                 globalPrefetchDone = false;
                 globalSessionId = null;
                 globalLookupDone = false;
-                router.push("/attendance");
+                // ✅ Check onboarding before redirect
+                const shouldWait = onSuccess?.(username);
+                if (!shouldWait) router.push("/attendance");
             } else {
                 setError("Login failed — no token received");
             }
@@ -102,7 +87,7 @@ export function useAuth() {
         }
     }
 
-    async function loginWithForceTerminate() {
+    async function loginWithForceTerminate(onSuccess?: (username: string) => boolean) {
         if (!pendingCredentials) return;
         setLoading(true);
         setError("");
@@ -120,7 +105,9 @@ export function useAuth() {
                 globalPrefetchDone = false;
                 globalSessionId = null;
                 globalLookupDone = false;
-                router.push("/attendance");
+                // ✅ Check onboarding before redirect
+                const shouldWait = onSuccess?.(pendingCredentials.username);
+                if (!shouldWait) router.push("/attendance");
             } else {
                 setError("Login failed — no token received");
             }
@@ -140,9 +127,7 @@ export function useAuth() {
     }
 
     async function logout() {
-        try {
-            await logoutApi();
-        } catch { }
+        try { await logoutApi(); } catch { }
         finally {
             clearSession();
             setAuthenticated(false);
@@ -155,17 +140,9 @@ export function useAuth() {
     }
 
     return {
-        login,
-        loginWithForceTerminate,
-        cancelSessionExceeded,
-        logout,
-        prefetch,
-        lookup,
-        loading,
-        error,
-        sessionExceeded,
-        name,
-        authenticated,
-        token: getToken(),
+        login, loginWithForceTerminate, cancelSessionExceeded,
+        logout, prefetch, lookup,
+        loading, error, sessionExceeded,
+        name, authenticated, token: getToken(),
     };
 }
