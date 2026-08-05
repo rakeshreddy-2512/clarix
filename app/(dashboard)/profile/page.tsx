@@ -133,7 +133,7 @@ export default function ProfilePage() {
                 >
                     Profile
                 </motion.h1>
-                <button onClick={() => setSupportOpen(true)} className="block md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #ff5f5f, #ff9800)", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(255,95,95,0.35)" }}>Donate</button>
+                <button onClick={() => setSupportOpen(true)} className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #ff5f5f, #ff9800)", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(255,95,95,0.35)" }}>Donate</button>
             </div>
 
             {error && (
