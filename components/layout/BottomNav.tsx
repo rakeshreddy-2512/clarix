@@ -230,7 +230,7 @@ export default function BottomNav() {
                                 })}
                             </div>
 
-                            {/* Support Clarix */}
+                            {/* Donate */}
                             <div style={{ marginTop: "auto", paddingTop: 16, position: "relative", zIndex: 1 }}>
                                 <button onClick={() => setSupportOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", width: "100%", transition: "all 0.15s" }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>Support Clarix</span>
