@@ -518,8 +518,7 @@ export default function LoginForm() {
                         textAlign: "center", fontSize: 12, color: "#94a3b8",
                         marginTop: 20, lineHeight: 1.6, fontWeight: 500,
                     }}>
-                        Uses your SRM Academia credentials securely.
-                        <br />We never store your password.
+                        We never store your password.
                     </p>
                 </motion.div>
 
