@@ -524,7 +524,7 @@ export default function LoginForm() {
 
                 <motion.p
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-                    style={{ marginTop: 20, fontSize: 12, color: "#cbd5e1", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
+                    style={{ marginTop: 20, fontSize: 12, color: "#0f172a", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
                 >
                     <Zap size={10} /> Powered by Clarix
                 </motion.p>
