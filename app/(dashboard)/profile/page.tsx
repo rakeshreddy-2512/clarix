@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bell, BellOff, ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
 const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
-const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
 import { getToken } from "@/lib/session";
 
 interface NotificationSettings {
