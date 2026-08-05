@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "Clarix — Academia Tracker",
     description: "Track your attendance, marks, timetable and academic planner in one place. Fast, clean and easy to use.",
-    keywords: "attendance tracker, marks tracker, timetable, academia, Clarix",
+    keywords: "Clarix, clarixapp, Clarix academia tracker",
     manifest: "/manifest.json",
     icons: {
         icon: "/icon-192.png",
