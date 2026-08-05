@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bell, BellOff, ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
 const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
-const DonateModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
+const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
 import { getToken } from "@/lib/session";
 
 interface NotificationSettings {
@@ -134,7 +134,7 @@ export default function ProfilePage() {
                 >
                     Profile
                 </motion.h1>
-                <button onClick={() => setSupportOpen(true)} className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #ff5f5f, #ff9800)", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(255,95,95,0.35)" }}>Support</button>
+                <button onClick={() => setSupportOpen(true)} className="block md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #ff5f5f, #ff9800)", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(255,95,95,0.35)" }}>Donate</button>
             </div>
 
             {error && (
