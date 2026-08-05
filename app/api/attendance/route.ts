@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 
             return NextResponse.json({
                 success: false,
-                error: "SRM Academia is slow. Please try again.",
+                error: "Academia is slow. Please try again.",
             }, { status: 503 });
 
         } catch (err: any) {

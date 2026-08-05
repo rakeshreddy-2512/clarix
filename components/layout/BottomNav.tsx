@@ -191,7 +191,7 @@ export default function BottomNav() {
                                     <span className="clarix-logo-letter">C</span>
                                 </div>
                                 <p style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>Clarix</p>
-                                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>SRM Academia</p>
+                                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>Academia</p>
                             </div>
 
                             {/* Nav items */}

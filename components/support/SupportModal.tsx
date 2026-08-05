@@ -80,7 +80,7 @@ export default function SupportModal({ onClose }: SupportModalProps) {
                 amount: order.amount,
                 currency: order.currency,
                 name: "Clarix",
-                description: "Support Clarix — SRM Academia Tracker",
+                description: "Support Clarix",
                 order_id: order.order_id,
                 handler: async (response: any) => {
                     const verifyRes = await fetch("/api/payment/verify", {

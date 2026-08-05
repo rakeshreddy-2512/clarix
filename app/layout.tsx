@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Clarix — SRM Academia Tracker",
-    description: "Track your SRM attendance, marks, timetable and academic planner in one place. Fast, clean and easy to use.",
-    keywords: "SRM attendance tracker, SRM marks, SRM timetable, academia SRM, Clarix, SRMIST",
+    title: "Clarix — Academia Tracker",
+    description: "Track your attendance, marks, timetable and academic planner in one place. Fast, clean and easy to use.",
+    keywords: "attendance tracker, marks tracker, timetable, academia, Clarix",
     manifest: "/manifest.json",
     icons: {
         icon: "/icon-192.png",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: "Clarix — SRM Academia Tracker",
-        description: "Track your SRM attendance, marks and timetable in one place.",
+        description: "Track your attendance, marks and timetable in one place.",
         url: "https://clarixapp.vercel.app",
         siteName: "Clarix",
         type: "website",

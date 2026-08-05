@@ -1,7 +1,7 @@
 {
     "name": "Clarix",
     "short_name": "Clarix",
-    "description": "SRM Academia Attendance & Marks Tracker",
+    "description": "Academia Tracker",
     "start_url": "/attendance",
     "display": "standalone",
     "background_color": "#0f0c29",

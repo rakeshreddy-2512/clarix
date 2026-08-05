@@ -87,7 +87,7 @@ export default function GPAPage() {
 
     return (
         <PageWrapper>
-            <Header title="GPA Calculator" subtitle="Calculate your SRM GPA & CGPA" />
+            <Header title="GPA Calculator" subtitle="Calculate your GPA & CGPA" />
 
             {/* Tab Switch */}
             <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
@@ -218,7 +218,7 @@ export default function GPAPage() {
 
                             {/* Grade Reference */}
                             <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 16 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>SRM Grade Scale</p>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>Grade Scale</p>
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                                     {GRADES.map(g => (
                                         <div key={g.value} style={{
