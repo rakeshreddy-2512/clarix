@@ -7,9 +7,9 @@ export const metadata: Metadata = {
     keywords: "SRM attendance tracker, SRM marks, SRM timetable, academia SRM, Clarix, SRMIST",
     manifest: "/manifest.json",
     icons: {
-        icon: "/favicon.svg",
-        shortcut: "/favicon.svg",
-        apple: "/favicon.svg",
+        icon: "/icon-192.png",
+        shortcut: "/icon-192.png",
+        apple: "/icon-192.png",
     },
     openGraph: {
         title: "Clarix — SRM Academia Tracker",
@@ -38,7 +38,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <head>
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="icon" type="image/png" href="/icon-192.png" />
             </head>
             <body className="mesh-bg antialiased">
                 {children}
