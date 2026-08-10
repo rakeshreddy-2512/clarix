@@ -50,6 +50,7 @@ export async function scrapeAttendanceAndMarks(cookies: string): Promise<string>
         return html;
     } catch (err: any) {
         if (err?.message === "SESSION_EXPIRED") throw err;
-        throw new Error("SESSION_EXPIRED");
+        console.log("⚠️ Fallback failed:", err?.message);
+        throw new Error("FETCH_FAILED");
     }
 }
