@@ -70,8 +70,8 @@ export async function GET(req: NextRequest) {
 
         } catch (err: any) {
             if (err?.message === "SESSION_EXPIRED") {
-                console.log("⚠️ Session expired — returning 401");
-                return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
+                console.log("⚠️ Session expired — returning 503");
+                return NextResponse.json({ success: false, error: "Academia is currently down. Please try again later." }, { status: 503 });
             }
             return NextResponse.json({ success: false, error: "Academia is currently down. Please try again later." }, { status: 503 });
         }
