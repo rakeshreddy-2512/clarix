@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
             }
 
             if (!result.success || !result.cookies) {
-                return NextResponse.json({ success: false, error: result.error || "Invalid credentials" }, { status: 401 });
+                const isDown = result.error?.includes("failed") || result.error?.includes("network") || result.error?.includes("timeout");
+return NextResponse.json({ success: false, error: isDown ? "Academia is currently down. Please try again later." : result.error || "Invalid credentials" }, { status: 401 });
             }
 
             const token = uuidv4();

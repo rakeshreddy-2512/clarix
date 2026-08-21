@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `marks:${regNo}`;
         const hashKey = `marks:${regNo}:hash`;
-        const TTL = 3600;
+        const TTL = 0;
 
         const cached = await getCachedData(cacheKey);
         if (cached) {
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 
             return NextResponse.json({
                 success: false,
-                error: "Academia is slow. Please try again.",
+                error: "Academia is currently down. Please try again later.",
             }, { status: 503 });
 
         } catch (err: any) {
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
                 console.log("⚠️ Session expired — returning 401");
                 return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
             }
-            return NextResponse.json({ success: false, error: "Marks temporarily unavailable" }, { status: 503 });
+            return NextResponse.json({ success: false, error: "Academia is currently down. Please try again later." }, { status: 503 });
         }
     } catch {
         return NextResponse.json({ success: false, error: "Failed to fetch marks" }, { status: 500 });
