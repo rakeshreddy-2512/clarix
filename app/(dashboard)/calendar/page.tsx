@@ -105,7 +105,7 @@ export default function CalendarPage() {
                                             DO {day.dayOrder}
                                         </span>
                                     ) : (
-                                        <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
+                                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>—</span>
                                     )}
                                 </div>
                             </div>

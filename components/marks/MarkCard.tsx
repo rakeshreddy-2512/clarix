@@ -17,8 +17,8 @@ export default function MarkCard({ course, index }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
                 borderRadius: 20,
                 padding: "20px 18px",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
@@ -32,7 +32,7 @@ export default function MarkCard({ course, index }: Props) {
                         <span style={{
                             fontSize: 11, fontFamily: "monospace", fontWeight: 700,
                             padding: "3px 8px", borderRadius: 6,
-                            background: "#f1f5f9", color: "#475569",
+                            background: "var(--bg-tertiary)", color: "var(--text-secondary)",
                         }}>
                             {course.code}
                         </span>
@@ -46,21 +46,21 @@ export default function MarkCard({ course, index }: Props) {
                         {!hasMarks && (
                             <span style={{
                                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6,
-                                background: "#f8fafc", color: "#94a3b8",
-                                border: "1px solid #e2e8f0",
+                                background: "var(--bg-primary)", color: "var(--text-muted)",
+                                border: "1px solid var(--border)",
                             }}>
                                 Not updated
                             </span>
                         )}
                     </div>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{course.title}</h3>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{course.title}</h3>
                 </div>
                 {hasMarks && (
                     <div style={{ textAlign: "right", marginLeft: 16, flexShrink: 0 }}>
-                        <span style={{ fontSize: 26, fontWeight: 900, color: "#0f172a" }}>
+                        <span style={{ fontSize: 26, fontWeight: 900, color: "var(--text-primary)" }}>
                             {fmt(totalScored)}
                         </span>
-                        <span style={{ fontSize: 14, color: "#0f172a", fontWeight: 700 }}>
+                        <span style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 700 }}>
                             {" / "}{fmt(totalMax)}
                         </span>
                     </div>
@@ -76,17 +76,17 @@ export default function MarkCard({ course, index }: Props) {
                             return (
                                 <div key={test.name}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                                        <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
                                             {test.name}
                                         </span>
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                                             {fmt(test.scored)}
-                                            <span style={{ color: "#0f172a", fontWeight: 700 }}>
+                                            <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>
                                                 {" / "}{fmt(test.max)}
                                             </span>
                                         </span>
                                     </div>
-                                    <div style={{ height: 6, borderRadius: 999, background: "#f1f5f9", overflow: "hidden" }}>
+                                    <div style={{ height: 6, borderRadius: 999, background: "var(--bg-tertiary)", overflow: "hidden" }}>
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${pct}%` }}
@@ -105,7 +105,7 @@ export default function MarkCard({ course, index }: Props) {
                     {/* Overall */}
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f1f5f9" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Overall</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Overall</span>
                             <span style={{ fontSize: 13, fontWeight: 800, color: "#302b63" }}>{overallPct}%</span>
                         </div>
                         <div style={{ height: 6, borderRadius: 999, background: "#f0eeff", overflow: "hidden" }}>

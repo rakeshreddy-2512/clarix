@@ -398,7 +398,7 @@ export default function TimetablePage() {
             )}
 
             <div style={{ padding: "0 20px 24px" }}>
-                <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Day Order</p>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Day Order</p>
                 <div style={{ display: "flex", gap: 10 }}>
                     {[1, 2, 3, 4, 5].map(day => (
                         <button key={day} onClick={() => setSelectedDay(day)} style={{
@@ -423,7 +423,7 @@ export default function TimetablePage() {
 
             <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
                 {slots.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 15 }}>
+                    <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)", fontSize: 15 }}>
                         No classes on Day Order {selectedDay}
                     </div>
                 ) : (
@@ -436,19 +436,19 @@ export default function TimetablePage() {
                             <div style={{ textAlign: "center", minWidth: 56, paddingTop: 2 }}>
                                 <p style={{ fontSize: 12, fontWeight: 700, color: "#ff6f00" }}>{slot.startTime}</p>
                                 <div style={{ width: 1, height: 16, background: "#e2e8f0", margin: "4px auto" }} />
-                                <p style={{ fontSize: 11, color: "#94a3b8" }}>{slot.endTime}</p>
+                                <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{slot.endTime}</p>
                             </div>
-                            <div style={{ width: 1, alignSelf: "stretch", background: "#f1f5f9" }} />
+                            <div style={{ width: 1, alignSelf: "stretch", background: "var(--bg-tertiary)" }} />
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
                                 {slot.courses.map((course, ci) => (
                                     <div key={ci}>
                                         {ci > 0 && (
-                                            <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", margin: "4px 0", borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>or</div>
+                                            <div style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", margin: "4px 0", borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>or</div>
                                         )}
                                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                                             <div style={{ flex: 1 }}>
                                                 <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3 }}>{course.title}</p>
-                                                <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{course.code}</p>
+                                                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>{course.code}</p>
                                             </div>
                                             <div style={{ textAlign: "right" }}>
                                                 <span style={{

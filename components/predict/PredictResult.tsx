@@ -45,7 +45,7 @@ export default function PredictResult({ course, result }: Props) {
             animate={{ opacity: 1, y: 0 }}
             style={{
                 padding: "16px", borderRadius: 16,
-                background: "#ffffff",
+                background: "var(--card-bg)",
                 border: `1px solid ${resultBorder}`,
                 boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                 display: "flex", flexDirection: "column", gap: 12,
@@ -53,10 +53,10 @@ export default function PredictResult({ course, result }: Props) {
         >
             {/* Course name and code */}
             <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                     {course.title}
                 </p>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
                     {course.code} • {course.category}
                 </p>
             </div>
@@ -64,16 +64,16 @@ export default function PredictResult({ course, result }: Props) {
             {/* Current → Predicted → Delta */}
             <div style={{
                 padding: "12px 14px", borderRadius: 12,
-                background: "#f8fafc", border: "1px solid #e2e8f0",
+                background: "var(--bg-primary)", border: "1px solid var(--border)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
                 <div style={{ textAlign: "center" }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
-                    <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{course.percentage}%</p>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
+                    <p style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)" }}>{course.percentage}%</p>
                 </div>
-                <div style={{ fontSize: 20, color: "#94a3b8" }}>→</div>
+                <div style={{ fontSize: 20, color: "var(--text-muted)" }}>→</div>
                 <div style={{ textAlign: "center" }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
                     <p style={{ fontSize: 24, fontWeight: 800, color: resultColor }}>{result.futurePercentage}%</p>
                 </div>
                 <div style={{
@@ -81,7 +81,7 @@ export default function PredictResult({ course, result }: Props) {
                     background: resultBg, border: `1px solid ${resultBorder}`,
                     textAlign: "center",
                 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
                     <p style={{ fontSize: 16, fontWeight: 800, color: resultColor }}>
                         {isPositive ? "+" : ""}{Number.isInteger(result.delta) ? result.delta : result.delta.toFixed(2)}%
                     </p>

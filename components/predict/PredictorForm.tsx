@@ -147,10 +147,10 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
         : [];
 
     const inputStyle: React.CSSProperties = {
-        background: "#f8fafc",
+        background: "var(--bg-primary)",
         border: "1.5px solid #e2e8f0",
         borderRadius: 12,
-        color: "#0f172a",
+        color: "var(--text-primary)",
         padding: "13px 16px",
         fontSize: 14,
         width: "100%",
@@ -161,7 +161,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
 
     const labelStyle: React.CSSProperties = {
         fontSize: 11, fontWeight: 700,
-        color: "#64748b", marginBottom: 8,
+        color: "var(--text-muted)", marginBottom: 8,
         display: "block",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
@@ -214,13 +214,13 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "16px 18px", borderRadius: 16,
-                    background: "#ffffff", border: "1px solid #e2e8f0",
+                    background: "var(--card-bg)", border: "1px solid var(--border)",
                     boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                 }}
             >
                 <div>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Will you attend?</p>
-                    <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 2, fontWeight: 500 }}>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>Will you attend?</p>
+                    <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2, fontWeight: 500 }}>
                         Toggle to see impact
                     </p>
                 </div>
@@ -240,7 +240,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                         style={{
                             position: "absolute", top: 3,
                             width: 20, height: 20, borderRadius: "50%",
-                            background: "#ffffff",
+                            background: "var(--card-bg)",
                             boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
                         }}
                     />
@@ -298,7 +298,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             {showResult && isAllSubjects && (
                 <AnimatePresence>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>
                             Prediction for all {courses.length} subjects:
                         </p>
                         {allSubjectsResults.map((item, i) => {
@@ -319,35 +319,35 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                     transition={{ delay: i * 0.04 }}
                                     style={{
                                         padding: "16px", borderRadius: 16,
-                                        background: "#ffffff",
+                                        background: "var(--card-bg)",
                                         border: `1px solid ${resultBorder}`,
                                         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                                         display: "flex", flexDirection: "column", gap: 12,
                                     }}
                                 >
                                     <div>
-                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                                             {c.title}
                                         </p>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
                                             {c.code} • {c.category}
                                         </p>
                                     </div>
 
                                     <div style={{
                                         padding: "12px 14px", borderRadius: 12,
-                                        background: "#f8fafc", border: "1px solid #e2e8f0",
+                                        background: "var(--bg-primary)", border: "1px solid var(--border)",
                                         display: "flex", alignItems: "center", justifyContent: "space-between",
                                     }}>
                                         <div style={{ textAlign: "center" }}>
-                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
-                                            <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{currentPercentage}%</p>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
+                                            <p style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)" }}>{currentPercentage}%</p>
                                         </div>
 
-                                        <div style={{ fontSize: 20, color: "#94a3b8" }}>→</div>
+                                        <div style={{ fontSize: 20, color: "var(--text-muted)" }}>→</div>
 
                                         <div style={{ textAlign: "center" }}>
-                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
                                             <p style={{ fontSize: 24, fontWeight: 800, color: resultColor }}>{futurePercentage}%</p>
                                         </div>
 
@@ -356,7 +356,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                             background: resultBg, border: `1px solid ${resultBorder}`,
                                             textAlign: "center",
                                         }}>
-                                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
                                             <p style={{ fontSize: 16, fontWeight: 800, color: resultColor }}>
                                                 {isPositive ? "+" : ""}{Number.isInteger(delta) ? delta : delta.toFixed(2)}%
                                             </p>

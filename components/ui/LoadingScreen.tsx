@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 export default function LoadingScreen() {
     return (
         <div style={{
-            position: "fixed", inset: 0, background: "#f8fafc",
+            position: "fixed", inset: 0, background: "var(--bg-primary)",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", zIndex: 50,
         }}>
@@ -29,10 +29,10 @@ export default function LoadingScreen() {
                 <span className="clarix-loading-letter">C</span>
             </motion.div>
 
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 8 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 8 }}>
                 Clarix
             </h1>
-            <p style={{ fontSize: 14, color: "#94a3b8", fontWeight: 500, marginBottom: 32 }}>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500, marginBottom: 32 }}>
                 Loading your academics...
             </p>
 

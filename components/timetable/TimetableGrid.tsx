@@ -17,7 +17,7 @@ function SlotCard({ slot, index }: { slot: TimetableSlot; index: number }) {
                 display: "flex", alignItems: "stretch", gap: 0,
                 borderRadius: 14, overflow: "hidden",
                 border: `1px solid ${isTheory ? "#bfdbfe" : "#ddd6fe"}`,
-                background: "#ffffff",
+                background: "var(--card-bg)",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}
         >
@@ -42,10 +42,10 @@ function SlotCard({ slot, index }: { slot: TimetableSlot; index: number }) {
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Clock size={11} color="#94a3b8" />
-                        <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{slot.time}</span>
+                        <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{slot.time}</span>
                     </div>
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4, lineHeight: 1.3 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4, lineHeight: 1.3 }}>
                     {slot.title}
                 </p>
                 <p style={{ fontSize: 12, fontWeight: 600, color: isTheory ? "#1d4ed8" : "#6d28d9", marginBottom: 6 }}>
@@ -53,7 +53,7 @@ function SlotCard({ slot, index }: { slot: TimetableSlot; index: number }) {
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <MapPin size={11} color="#94a3b8" />
-                    <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{slot.room}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{slot.room}</span>
                 </div>
             </div>
         </motion.div>
@@ -94,7 +94,7 @@ export default function TimetableGrid({ timetable }: { timetable: Timetable }) {
                                     </span>
                                 )}
                             </div>
-                            <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>
+                            <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 500 }}>
                                 {slots.length} {slots.length === 1 ? "class" : "classes"}
                             </span>
                         </div>
@@ -103,7 +103,7 @@ export default function TimetableGrid({ timetable }: { timetable: Timetable }) {
                         {slots.length === 0 ? (
                             <div style={{
                                 padding: "16px", borderRadius: 12, textAlign: "center",
-                                background: "#f8fafc", border: "1px solid #f1f5f9",
+                                background: "var(--bg-primary)", border: "1px solid var(--border-light)",
                                 fontSize: 13, color: "#cbd5e1", fontWeight: 500,
                             }}>
                                 No classes scheduled
@@ -117,7 +117,7 @@ export default function TimetableGrid({ timetable }: { timetable: Timetable }) {
                         )}
 
                         {dayIndex < DAYS.length - 1 && (
-                            <div style={{ height: 1, background: "#f1f5f9", marginTop: 24 }} />
+                            <div style={{ height: 1, background: "var(--bg-tertiary)", marginTop: 24 }} />
                         )}
                     </motion.div>
                 );
