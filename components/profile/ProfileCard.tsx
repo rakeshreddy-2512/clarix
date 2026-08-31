@@ -100,8 +100,8 @@ export default function ProfileCard({ student }: { student: Student }) {
                 transition={{ delay: 0.1 }}
                 style={{
                     borderRadius: 20, overflow: "hidden",
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--border)",
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
             >
@@ -125,8 +125,8 @@ export default function ProfileCard({ student }: { student: Student }) {
                                 <Icon size={16} color="#302b63" />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, marginBottom: 2 }}>{label}</p>
-                                <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>{value}</p>
+                                <p style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>{label}</p>
+                                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{value}</p>
                             </div>
                         </div>
                     );
@@ -146,8 +146,8 @@ export default function ProfileCard({ student }: { student: Student }) {
                             <Layers size={16} color="#302b63" />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, marginBottom: 2 }}>Batch</p>
-                            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>{batch}</p>
+                            <p style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>Batch</p>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{batch}</p>
                         </div>
                     </div>
                 )}

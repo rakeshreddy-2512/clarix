@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (checking) return <LoadingScreen />;
 
     return (
-        <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
+        <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
             <BottomNav />
             {/* Content — margin handled by sidebar state in CSS */}
             <div className="md:pl-[220px] transition-all duration-300">

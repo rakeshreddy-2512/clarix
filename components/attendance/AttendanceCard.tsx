@@ -24,8 +24,8 @@ export default function AttendanceCard({ course, index }: Props) {
             transition={{ duration: 0.3, delay: index * 0.05 }}
             whileTap={{ scale: 0.99 }}
             style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--border)",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
                 borderRadius: 20,
                 padding: "18px 16px",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
@@ -41,14 +41,14 @@ export default function AttendanceCard({ course, index }: Props) {
                     <span style={{
                         fontSize: 11, fontFamily: "monospace", fontWeight: 700,
                         padding: "3px 8px", borderRadius: 6,
-                        background: "var(--bg-tertiary)", color: "var(--text-secondary)",
+                        background: "#f1f5f9", color: "#475569",
                     }}>
                         {course.code}
                     </span>
                     <span style={{
                         fontSize: 11, fontWeight: 600,
                         padding: "3px 8px", borderRadius: 6,
-                        background: "var(--bg-secondary)", color: "var(--text-muted)",
+                        background: "#f8fafc", color: "#94a3b8",
                     }}>
                         Slot {course.slot}
                     </span>
@@ -56,14 +56,14 @@ export default function AttendanceCard({ course, index }: Props) {
 
                 {/* Title */}
                 <h3 style={{
-                    fontSize: 16, fontWeight: 700, color: "var(--text-primary)",
+                    fontSize: 16, fontWeight: 700, color: "#0f172a",
                     marginBottom: 4, lineHeight: 1.3,
                 }}>
                     {course.title}
                 </h3>
 
                 {/* Faculty */}
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, fontWeight: 500 }}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12, fontWeight: 500 }}>
                     {course.faculty}
                 </p>
 
@@ -71,7 +71,7 @@ export default function AttendanceCard({ course, index }: Props) {
                 <div style={{
                     display: "inline-flex", alignItems: "center", gap: 12,
                     padding: "6px 12px", borderRadius: 10,
-                    background: "var(--bg-secondary)", border: "1px solid var(--border)",
+                    background: "#f8fafc", border: "1px solid #e2e8f0",
                     marginBottom: 8,
                 }}>
                     {[
@@ -82,7 +82,7 @@ export default function AttendanceCard({ course, index }: Props) {
                         <div key={stat.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             {i > 0 && <span style={{ color: "#e2e8f0", fontSize: 14 }}>|</span>}
                             <span style={{ fontSize: 13, fontWeight: 700, color: stat.color }}>{stat.value}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>{stat.label}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>{stat.label}</span>
                         </div>
                     ))}
                 </div>

@@ -66,7 +66,7 @@ export default function MarksPage() {
                         exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
                         style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                         {filtered.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)", fontSize: 15 }}>
+                            <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 15 }}>
                                 No {activeTab} marks found
                             </div>
                         ) : (

@@ -92,7 +92,7 @@ export default function PredictPage() {
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     style={{
                         padding: "14px 16px", borderRadius: 12, fontSize: 14,
-                        background: "var(--bg-primary)", border: "1px solid var(--border)",
+                        background: "#f8fafc", border: "1px solid #e2e8f0",
                         color: "var(--text-muted)", fontWeight: 500,
                     }}>
                     Select a course or all subjects, pick a date range and toggle whether you will attend.
@@ -110,7 +110,7 @@ export default function PredictPage() {
             {courses.length === 0 && !loading && !error && (
                 <div style={{ textAlign: "center", padding: "60px 0" }}>
                     <TrendingUp size={32} style={{ margin: "0 auto 12px", color: "#e2e8f0" }} />
-                    <p style={{ fontSize: 15, color: "var(--text-muted)" }}>No courses found to predict</p>
+                    <p style={{ fontSize: 15, color: "#94a3b8" }}>No courses found to predict</p>
                 </div>
             )}
 

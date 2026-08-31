@@ -13,8 +13,8 @@ export default function TabSwitch({ tabs, active, onChange, layoutId = "tab" }: 
             padding: 4,
             borderRadius: 12,
             gap: 3,
-            background: "var(--bg-tertiary)",
-            border: "1px solid var(--border)",
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
         }}>
             {tabs.map((tab) => (
                 <button
@@ -40,7 +40,7 @@ export default function TabSwitch({ tabs, active, onChange, layoutId = "tab" }: 
                                 position: "absolute",
                                 inset: 0,
                                 borderRadius: 9,
-                                background: "var(--card-bg)",
+                                background: "#ffffff",
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                                 zIndex: -1,
                             }}

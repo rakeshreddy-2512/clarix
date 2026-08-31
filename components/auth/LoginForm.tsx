@@ -185,7 +185,7 @@ function SessionExceededDialog({
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                 style={{
-                    background: "var(--card-bg)", borderRadius: 20, padding: 28,
+                    background: "#ffffff", borderRadius: 20, padding: 28,
                     maxWidth: 360, width: "100%",
                     boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
                 }}
@@ -197,10 +197,10 @@ function SessionExceededDialog({
                 }}>
                     <span style={{ fontSize: 22 }}>⚠️</span>
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 8 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>
                     Session Limit Reached
                 </h3>
-                <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500, marginBottom: 24, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500, marginBottom: 24, lineHeight: 1.6 }}>
                     You have reached the maximum session limit.
                     Would you like to logout from all other sessions and continue?
                 </p>
@@ -209,8 +209,8 @@ function SessionExceededDialog({
                         onClick={onCancel} disabled={loading}
                         style={{
                             flex: 1, padding: "12px", borderRadius: 12,
-                            border: "1.5px solid #e2e8f0", background: "var(--card-bg)",
-                            color: "var(--text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                            border: "1.5px solid #e2e8f0", background: "#ffffff",
+                            color: "#64748b", fontSize: 14, fontWeight: 600, cursor: "pointer",
                         }}
                     >
                         Cancel
@@ -247,7 +247,7 @@ function LoadingOverlay() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{
                 position: "fixed", inset: 0, zIndex: 9999,
-                background: "var(--card-bg)",
+                background: "#ffffff",
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: 32,
             }}
@@ -276,12 +276,12 @@ function LoadingOverlay() {
                         key={stepIndex}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.3 }}
-                        style={{ color: "var(--text-primary)", fontSize: 16, fontWeight: 600 }}
+                        style={{ color: "#0f172a", fontSize: 16, fontWeight: 600 }}
                     >
                         {LOADING_STEPS[stepIndex]}
                     </motion.p>
                 </AnimatePresence>
-                <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>This may take a few seconds</p>
+                <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>This may take a few seconds</p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
                 {LOADING_STEPS.map((_, i) => (
@@ -357,7 +357,7 @@ export default function LoginForm() {
             </AnimatePresence>
 
             <div style={{
-                minHeight: "100vh", background: "var(--bg-primary)",
+                minHeight: "100vh", background: "#f8fafc",
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", padding: 24,
             }}>
@@ -366,34 +366,34 @@ export default function LoginForm() {
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32 }}
                 >
                     <div style={{ marginBottom: 16 }}><ClarixLogo /></div>
-                    <p style={{ color: "var(--text-muted)", fontSize: 14, fontWeight: 500 }}>Academia Tracker</p>
+                    <p style={{ color: "#64748b", fontSize: 14, fontWeight: 500 }}>Academia Tracker</p>
                 </motion.div>
 
                 <motion.div
                     initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }}
                     style={{
-                        width: "100%", maxWidth: 400, background: "var(--card-bg)",
-                        border: "1px solid var(--border)", borderRadius: 24, padding: 32,
+                        width: "100%", maxWidth: 400, background: "#ffffff",
+                        border: "1px solid #e2e8f0", borderRadius: 24, padding: 32,
                         boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
                     }}
                 >
-                    <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginBottom: 6, letterSpacing: "-0.02em" }}>
+                    <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 6, letterSpacing: "-0.02em" }}>
                         Welcome 👋
                     </h2>
-                    <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 28, fontWeight: 500 }}>
+                    <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28, fontWeight: 500 }}>
                         Sign in with your academia credentials
                     </p>
                     <form onSubmit={handleSubmit}>
                         <div style={{ marginBottom: 16 }}>
                             <label style={{
                                 display: "block", fontSize: 11, fontWeight: 700,
-                                color: "var(--text-muted)", marginBottom: 8,
+                                color: "#64748b", marginBottom: 8,
                                 textTransform: "uppercase", letterSpacing: "0.06em",
                             }}>
                                 NetID or College Email
                             </label>
                             <div style={{ position: "relative" }}>
-                                <Mail size={15} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                                <Mail size={15} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                                 <input
                                     type="text" value={username}
                                     onChange={(e) => setUsername(e.target.value)}
@@ -401,8 +401,8 @@ export default function LoginForm() {
                                     style={{
                                         width: "100%", paddingLeft: 42, paddingRight: 16,
                                         paddingTop: 13, paddingBottom: 13,
-                                        background: "var(--bg-primary)", border: "1.5px solid #e2e8f0",
-                                        borderRadius: 12, color: "var(--text-primary)",
+                                        background: "#f8fafc", border: "1.5px solid #e2e8f0",
+                                        borderRadius: 12, color: "#0f172a",
                                         fontSize: 14, fontWeight: 500,
                                         outline: "none", transition: "all 0.2s",
                                         opacity: loading ? 0.6 : 1,
@@ -423,13 +423,13 @@ export default function LoginForm() {
                         <div style={{ marginBottom: 24 }}>
                             <label style={{
                                 display: "block", fontSize: 11, fontWeight: 700,
-                                color: "var(--text-muted)", marginBottom: 8,
+                                color: "#64748b", marginBottom: 8,
                                 textTransform: "uppercase", letterSpacing: "0.06em",
                             }}>
                                 Password
                             </label>
                             <div style={{ position: "relative" }}>
-                                <Lock size={15} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                                <Lock size={15} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password} onChange={(e) => setPassword(e.target.value)}
@@ -437,8 +437,8 @@ export default function LoginForm() {
                                     style={{
                                         width: "100%", paddingLeft: 42, paddingRight: 46,
                                         paddingTop: 13, paddingBottom: 13,
-                                        background: "var(--bg-primary)", border: "1.5px solid #e2e8f0",
-                                        borderRadius: 12, color: "var(--text-primary)",
+                                        background: "#f8fafc", border: "1.5px solid #e2e8f0",
+                                        borderRadius: 12, color: "#0f172a",
                                         fontSize: 14, fontWeight: 500,
                                         outline: "none", transition: "all 0.2s",
                                         opacity: loading ? 0.6 : 1,
@@ -460,7 +460,7 @@ export default function LoginForm() {
                                     style={{
                                         position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
                                         background: "none", border: "none", cursor: "pointer",
-                                        color: "var(--text-muted)", display: "flex", alignItems: "center",
+                                        color: "#94a3b8", display: "flex", alignItems: "center",
                                     }}
                                 >
                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -515,7 +515,7 @@ export default function LoginForm() {
                         </motion.button>
                     </form>
                     <p style={{
-                        textAlign: "center", fontSize: 12, color: "var(--text-muted)",
+                        textAlign: "center", fontSize: 12, color: "#94a3b8",
                         marginTop: 20, lineHeight: 1.6, fontWeight: 500,
                     }}>
                         We never store your password.
@@ -524,11 +524,11 @@ export default function LoginForm() {
 
                 <motion.p
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-                    style={{ marginTop: 20, fontSize: 12, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
+                    style={{ marginTop: 20, fontSize: 12, color: "#0f172a", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
                 >
                     <Zap size={10} /> Powered by Clarix
                 </motion.p>
-                <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
+                <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
                     By signing in you agree to our{" "}
                     <a href="/privacy" target="_blank" style={{ color: "#1d4ed8", fontWeight: 600 }}>Privacy Policy</a>
                 </p>

@@ -114,8 +114,8 @@ export default function GPAPage() {
     const cgpaTotalPoints = validSems.reduce((sum, s) => sum + (s.credits as number) * (s.gpa as number), 0);
     const cgpa = cgpaTotalCredits > 0 ? cgpaTotalPoints / cgpaTotalCredits : null;
 
-    const gpaColors = gpa !== null ? getGPAColor(gpa) : { color: "var(--text-muted)", bg: "#f8fafc", border: "#e2e8f0" };
-    const cgpaColors = cgpa !== null ? getGPAColor(cgpa) : { color: "var(--text-muted)", bg: "#f8fafc", border: "#e2e8f0" };
+    const gpaColors = gpa !== null ? getGPAColor(gpa) : { color: "#94a3b8", bg: "#f8fafc", border: "#e2e8f0" };
+    const cgpaColors = cgpa !== null ? getGPAColor(cgpa) : { color: "#94a3b8", bg: "#f8fafc", border: "#e2e8f0" };
 
     const updateGrade = (index: number, grade: number | null) => {
         setSubjectGrades(prev => prev.map((s, i) => i === index ? { ...s, grade } : s));
@@ -137,14 +137,14 @@ export default function GPAPage() {
     const SelectionPanel = ({ showSemester = false }: { showSemester?: boolean }) => (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 4 }}>
             <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Regulation</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Regulation</label>
                 <select value={selectedRegulation} onChange={e => setSelectedRegulation(e.target.value)} style={inputStyle}>
                     <option value="">Select Regulation</option>
                     {regulations.map(r => <option key={r} value={r}>{r} Regulation</option>)}
                 </select>
             </div>
             <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Branch</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Branch</label>
                 <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} style={inputStyle} disabled={!selectedRegulation}>
                     <option value="">Select Branch</option>
                     {branches.map(b => <option key={b} value={b}>{b}</option>)}
@@ -152,7 +152,7 @@ export default function GPAPage() {
             </div>
             {showSemester && selectedBranch && (
                 <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Semester</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Semester</label>
                     <select value={selectedSemester} onChange={e => setSelectedSemester(e.target.value)} style={inputStyle}>
                         <option value="">Select Semester</option>
                         {semesters.map(s => <option key={s} value={s}>{s}</option>)}
@@ -167,7 +167,7 @@ export default function GPAPage() {
             <Header title="GPA Calculator" subtitle="Calculate your GPA & CGPA" />
 
             <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
-                <div style={{ display: "inline-flex", padding: 4, borderRadius: 12, gap: 3, background: "var(--bg-tertiary)", border: "1px solid var(--border)" }}>
+                <div style={{ display: "inline-flex", padding: 4, borderRadius: 12, gap: 3, background: "#f1f5f9", border: "1px solid var(--border)" }}>
                     {(["gpa", "cgpa"] as const).map((tab) => (
                         <button key={tab} onClick={() => setActiveTab(tab)} style={{
                             padding: "7px 24px", borderRadius: 9, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
@@ -220,7 +220,7 @@ export default function GPAPage() {
                                 <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>Grade Scale</p>
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                                     {GRADES.map(g => (
-                                        <div key={g.value} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, background: "var(--bg-primary)", border: "1px solid var(--border-light)" }}>
+                                        <div key={g.value} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, background: "var(--bg-primary)", border: "1px solid #f1f5f9" }}>
                                             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{g.label.split(" — ")[0]}</span>
                                             <span style={{ fontSize: 12, fontWeight: 600, color: "#302b63" }}>{g.value} pts</span>
                                         </div>
@@ -249,7 +249,7 @@ export default function GPAPage() {
                                     style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", minWidth: 70 }}>{sem.name}</span>
                                     <div style={{ flex: 1 }}>
-                                        <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>GPA</label>
+                                        <label style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>GPA</label>
                                         <input type="number" min={0} max={10} step={0.01} placeholder="0.00"
                                             value={sem.gpa ?? ""}
                                             onChange={e => updateCgpaSem(sem.id, "gpa", e.target.value === "" ? null : Number(e.target.value))}
@@ -261,7 +261,7 @@ export default function GPAPage() {
                                         </div>
                                     ) : (
                                         <div style={{ flex: 1 }}>
-                                            <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Credits</label>
+                                            <label style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>Credits</label>
                                             <input type="number" min={0} max={50} placeholder="0"
                                                 value={sem.credits ?? ""}
                                                 onChange={e => updateCgpaSem(sem.id, "credits", e.target.value === "" ? null : Number(e.target.value))}
@@ -296,8 +296,8 @@ export default function GPAPage() {
                                     { label: "MS Abroad (Top US)", range: "8.5 - 9.5+", color: "#15803d" },
                                     { label: "Minimum Graduation", range: "5.0", color: "#dc2626" },
                                 ].map(item => (
-                                    <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
-                                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>{item.label}</span>
+                                    <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>{item.label}</span>
                                         <span style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.range}</span>
                                     </div>
                                 ))}
