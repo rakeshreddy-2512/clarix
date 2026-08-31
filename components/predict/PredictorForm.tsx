@@ -6,7 +6,7 @@ import { usePredictor, PlannerDay } from "@/hooks/usePredictor";
 import { useFetch } from "@/hooks/useFetch";
 import { getPlannerApi } from "@/lib/api";
 import PredictResult from "./PredictResult";
-import { TrendingUp, Edit3 } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface PlannerData {
     map: Record<string, PlannerDay>;
@@ -61,9 +61,7 @@ function countFutureClasses(
     if (Object.keys(plannerMap).length > 0 && slot) {
         const slots = slot.split(",").map(s => s.trim().toUpperCase());
         const dayOrdersSet = new Set<number>();
-        slots.forEach(s => {
-            (slotMap[s] || []).forEach(d => dayOrdersSet.add(d));
-        });
+        slots.forEach(s => { (slotMap[s] || []).forEach(d => dayOrdersSet.add(d)); });
         const dayOrders = Array.from(dayOrdersSet);
         let count = 0;
         const current = parseLocalDate(fromDate);
@@ -71,9 +69,7 @@ function countFutureClasses(
         while (current <= end) {
             const dateStr = localDateStr(current);
             const plannerDay = plannerMap[dateStr];
-            if (plannerDay?.dayOrder && dayOrders.includes(plannerDay.dayOrder)) {
-                count++;
-            }
+            if (plannerDay?.dayOrder && dayOrders.includes(plannerDay.dayOrder)) count++;
             current.setDate(current.getDate() + 1);
         }
         return count;
@@ -99,6 +95,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
     const [showResult, setShowResult] = useState(false);
     const [manualMode, setManualMode] = useState(false);
     const [manualPercentages, setManualPercentages] = useState<Record<string, number>>({});
+    const [manualTotalClasses, setManualTotalClasses] = useState<Record<string, number>>({});
 
     const { data: plannerData } = useFetch<PlannerData>(
         getPlannerApi as () => Promise<PlannerData>
@@ -106,17 +103,15 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
 
     const plannerMap = plannerData?.map || {};
     const isAllSubjects = selectedCourse === "ALL";
-    const course = courses.find((c) => c.code === selectedCourse);
 
-    // In manual mode, override course percentages
+    // In manual mode, build effective courses with user-entered data
     const effectiveCourses = manualMode
-        ? courses.map(c => ({
-            ...c,
-            percentage: manualPercentages[c.code] ?? c.percentage,
-            attended: manualPercentages[c.code] !== undefined
-                ? Math.round((manualPercentages[c.code] / 100) * c.totalClasses)
-                : c.attended,
-        }))
+        ? courses.map(c => {
+            const pct = manualPercentages[c.code] ?? 0;
+            const total = manualTotalClasses[c.code] ?? 100;
+            const attended = Math.round((pct / 100) * total);
+            return { ...c, percentage: pct, totalClasses: total, attended, absent: total - attended };
+        })
         : courses;
 
     const effectiveCourse = effectiveCourses.find((c) => c.code === selectedCourse);
@@ -135,32 +130,13 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             const from = parseLocalDate(fromDate);
             const to = parseLocalDate(toDate);
             if (from > to) return null;
-
-            const futureClasses = countFutureClasses(
-                c.slot || "",
-                fromDate,
-                toDate,
-                plannerMap,
-                c.category,
-                batch
-            );
-
-            const currentPercentage = c.totalClasses > 0 ? c.percentage : (manualPercentages[c.code] ?? 0);
-
-            if (futureClasses === 0) {
-                return { course: c, futurePercentage: currentPercentage, delta: 0, futureClasses: 0, currentPercentage };
-            }
-
-            const totalClasses = c.totalClasses > 0 ? c.totalClasses : 100;
-            const attended = c.totalClasses > 0 ? c.attended : Math.round((currentPercentage / 100) * 100);
-
-            const futureTotal = totalClasses + futureClasses;
-            const futureAttendedTotal = attended + (willAttend ? futureClasses : 0);
-            const futurePercentage = futureTotal > 0
-                ? Math.round((futureAttendedTotal / futureTotal) * 100)
-                : 0;
+            const futureClasses = countFutureClasses(c.slot || "", fromDate, toDate, plannerMap, c.category, batch);
+            const currentPercentage = c.percentage;
+            if (futureClasses === 0) return { course: c, futurePercentage: currentPercentage, delta: 0, futureClasses: 0, currentPercentage };
+            const futureTotal = c.totalClasses + futureClasses;
+            const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
+            const futurePercentage = futureTotal > 0 ? Math.round((futureAttendedTotal / futureTotal) * 100) : 0;
             const delta = Math.round((futurePercentage - currentPercentage) * 100) / 100;
-
             return { course: c, futurePercentage, delta, futureClasses, currentPercentage };
         }).filter(Boolean)
         : [];
@@ -186,99 +162,36 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
         letterSpacing: "0.06em",
     };
 
-    const isZeroData = courses.every(c => c.totalClasses === 0);
-
     return (
         <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* Manual mode toggle — show when SRM is down or data is 0 */}
-            {isZeroData && (
-                <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
+            {/* Manual mode toggle — small, top right */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: manualMode ? "#1d4ed8" : "#94a3b8" }}>
+                    Manual Mode
+                </span>
+                <button
+                    onClick={() => { setManualMode(!manualMode); setShowResult(false); setManualPercentages({}); setManualTotalClasses({}); }}
                     style={{
-                        padding: "14px 16px", borderRadius: 14,
-                        background: manualMode ? "#eff6ff" : "#f8fafc",
-                        border: `1px solid ${manualMode ? "#bfdbfe" : "#e2e8f0"}`,
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: 36, height: 20, borderRadius: 999,
+                        border: "none", cursor: "pointer",
+                        background: manualMode ? "#1d4ed8" : "#e2e8f0",
+                        position: "relative", transition: "background 0.2s",
+                        flexShrink: 0,
                     }}
                 >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Edit3 size={16} color={manualMode ? "#1d4ed8" : "#94a3b8"} />
-                        <div>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Manual Mode</p>
-                            <p style={{ fontSize: 12, color: "#94a3b8" }}>Enter your attendance % manually</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => { setManualMode(!manualMode); setShowResult(false); }}
+                    <motion.div
+                        animate={{ x: manualMode ? 17 : 2 }}
+                        transition={{ type: "spring", bounce: 0.3 }}
                         style={{
-                            width: 48, height: 26, borderRadius: 999,
-                            border: "none", cursor: "pointer",
-                            background: manualMode ? "#1d4ed8" : "#e2e8f0",
-                            position: "relative", transition: "background 0.2s",
-                            flexShrink: 0,
+                            position: "absolute", top: 2,
+                            width: 16, height: 16, borderRadius: "50%",
+                            background: "#ffffff",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
                         }}
-                    >
-                        <motion.div
-                            animate={{ x: manualMode ? 24 : 2 }}
-                            transition={{ type: "spring", bounce: 0.3 }}
-                            style={{
-                                position: "absolute", top: 3,
-                                width: 20, height: 20, borderRadius: "50%",
-                                background: "#ffffff",
-                                boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                            }}
-                        />
-                    </button>
-                </motion.div>
-            )}
-
-            {/* Manual percentage inputs */}
-            {manualMode && isZeroData && (
-                <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ display: "flex", flexDirection: "column", gap: 10 }}
-                >
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Enter current attendance %
-                    </p>
-                    {courses.map(c => (
-                        <div key={c.code} style={{
-                            display: "flex", alignItems: "center", gap: 12,
-                            padding: "12px 14px", borderRadius: 12,
-                            background: "#ffffff", border: "1px solid #e2e8f0",
-                        }}>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{c.title}</p>
-                                <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.code}</p>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={100}
-                                    placeholder="0"
-                                    value={manualPercentages[c.code] ?? ""}
-                                    onChange={e => {
-                                        const val = Math.min(100, Math.max(0, Number(e.target.value)));
-                                        setManualPercentages(prev => ({ ...prev, [c.code]: val }));
-                                        setShowResult(false);
-                                    }}
-                                    style={{
-                                        width: 64, padding: "8px 10px", borderRadius: 8,
-                                        border: "1.5px solid #e2e8f0", background: "#f8fafc",
-                                        fontSize: 14, fontWeight: 700, color: "#0f172a",
-                                        outline: "none", textAlign: "center",
-                                    }}
-                                />
-                                <span style={{ fontSize: 14, fontWeight: 700, color: "#64748b" }}>%</span>
-                            </div>
-                        </div>
-                    ))}
-                </motion.div>
-            )}
+                    />
+                </button>
+            </div>
 
             {/* Course selector */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -297,6 +210,52 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                     ))}
                 </select>
             </motion.div>
+
+            {/* Manual mode — show % input for selected course or all */}
+            {manualMode && selectedCourse && (
+                <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                >
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Enter current attendance %
+                    </p>
+                    {(isAllSubjects ? courses : courses.filter(c => c.code === selectedCourse)).map(c => (
+                        <div key={c.code} style={{
+                            display: "flex", alignItems: "center", gap: 12,
+                            padding: "12px 14px", borderRadius: 12,
+                            background: "#ffffff", border: "1px solid #e2e8f0",
+                        }}>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{c.title}</p>
+                                <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.code} • {c.category}</p>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    placeholder="75"
+                                    value={manualPercentages[c.code] ?? ""}
+                                    onChange={e => {
+                                        const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                        setManualPercentages(prev => ({ ...prev, [c.code]: val }));
+                                        setShowResult(false);
+                                    }}
+                                    style={{
+                                        width: 60, padding: "8px 10px", borderRadius: 8,
+                                        border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                                        fontSize: 14, fontWeight: 700, color: "#0f172a",
+                                        outline: "none", textAlign: "center",
+                                    }}
+                                />
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#64748b" }}>%</span>
+                            </div>
+                        </div>
+                    ))}
+                </motion.div>
+            )}
 
             {/* Date range */}
             <motion.div
@@ -318,7 +277,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 </div>
             </motion.div>
 
-            {/* Toggle */}
+            {/* Will you attend toggle */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -331,9 +290,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             >
                 <div>
                     <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Will you attend?</p>
-                    <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 2, fontWeight: 500 }}>
-                        Toggle to see impact
-                    </p>
+                    <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 2, fontWeight: 500 }}>Toggle to see impact</p>
                 </div>
                 <button
                     onClick={() => { setWillAttend(!willAttend); setShowResult(false); }}
@@ -371,14 +328,10 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     borderRadius: 14, border: "none",
                     fontSize: 15, fontWeight: 700,
-                    background: (!selectedCourse || !fromDate || !toDate)
-                        ? "#f1f5f9"
-                        : "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+                    background: (!selectedCourse || !fromDate || !toDate) ? "#f1f5f9" : "linear-gradient(135deg, #1d4ed8, #3b82f6)",
                     color: (!selectedCourse || !fromDate || !toDate) ? "#94a3b8" : "#ffffff",
                     cursor: (!selectedCourse || !fromDate || !toDate) ? "not-allowed" : "pointer",
-                    boxShadow: (!selectedCourse || !fromDate || !toDate)
-                        ? "none"
-                        : "0 4px 20px rgba(29,78,216,0.35)",
+                    boxShadow: (!selectedCourse || !fromDate || !toDate) ? "none" : "0 4px 20px rgba(29,78,216,0.35)",
                 }}
             >
                 <TrendingUp size={17} />
@@ -387,14 +340,11 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
 
             {/* Note */}
             <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 style={{
                     padding: "12px 14px", borderRadius: 12,
                     background: "#fffbeb", border: "1px solid #fde68a",
-                    fontSize: 12, color: "#92400e", fontWeight: 500,
-                    lineHeight: 1.6,
+                    fontSize: 12, color: "#92400e", fontWeight: 500, lineHeight: 1.6,
                 }}
             >
                 ⚠️ <b>Note:</b> If any subject has an optional class within your selected date range, use <b>single subject prediction</b> for more accurate results instead of All Subjects.
@@ -421,7 +371,6 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                             const resultBorder = isExcellent ? "#bbf7d0" : isWarning ? "#fde68a" : "#fecaca";
                             const resultBg = isExcellent ? "#f0fdf4" : isWarning ? "#fffbeb" : "#fef2f2";
                             const isPositive = delta >= 0;
-
                             return (
                                 <motion.div
                                     key={`${c.code}-${c.category}`}
@@ -438,11 +387,8 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                 >
                                     <div>
                                         <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{c.title}</p>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>
-                                            {c.code} • {c.category}
-                                        </p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>{c.code} • {c.category}</p>
                                     </div>
-
                                     <div style={{
                                         padding: "12px 14px", borderRadius: 12,
                                         background: "#f8fafc", border: "1px solid #e2e8f0",
@@ -457,11 +403,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
                                             <p style={{ fontSize: 24, fontWeight: 800, color: resultColor }}>{futurePercentage}%</p>
                                         </div>
-                                        <div style={{
-                                            padding: "6px 12px", borderRadius: 10,
-                                            background: resultBg, border: `1px solid ${resultBorder}`,
-                                            textAlign: "center",
-                                        }}>
+                                        <div style={{ padding: "6px 12px", borderRadius: 10, background: resultBg, border: `1px solid ${resultBorder}`, textAlign: "center" }}>
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Delta</p>
                                             <p style={{ fontSize: 16, fontWeight: 800, color: resultColor }}>
                                                 {isPositive ? "+" : ""}{Number.isInteger(delta) ? delta : delta.toFixed(2)}%
