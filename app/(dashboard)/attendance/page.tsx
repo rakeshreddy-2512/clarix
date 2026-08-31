@@ -9,35 +9,51 @@ import AttendanceCard from "@/components/attendance/AttendanceCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getAttendanceApi, getTimetableApi } from "@/lib/api";
-import { AttendanceCourse, TimetableSlot } from "@/utils/types";
+import { AttendanceCourse } from "@/utils/types";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
 
+interface TimetableCourse {
+    code: string;
+    title: string;
+    room: string;
+    type: string;
+    slot: string;
+}
+
+interface TimetableSlotEntry {
+    startTime: string;
+    endTime: string;
+    courses: TimetableCourse[];
+}
+
 interface TimetableResult {
-    timetable: Record<string, TimetableSlot[]>;
+    timetable: Record<number, TimetableSlotEntry[]>;
     batch: number;
     section: string;
 }
 
-function getTimetableSubjects(timetable: Record<string, TimetableSlot[]>): AttendanceCourse[] {
+function getTimetableSubjects(timetable: Record<number, TimetableSlotEntry[]>): AttendanceCourse[] {
     const seen = new Set<string>();
     const subjects: AttendanceCourse[] = [];
     Object.values(timetable).forEach(slots => {
         slots.forEach(slot => {
-            if (slot.code && !seen.has(slot.code)) {
-                seen.add(slot.code);
-                subjects.push({
-                    code: slot.code,
-                    title: slot.title,
-                    faculty: "—",
-                    category: slot.type,
-                    slot: slot.slot,
-                    room: slot.room || "—",
-                    totalClasses: 0,
-                    attended: 0,
-                    absent: 0,
-                    percentage: 0,
-                });
-            }
+            slot.courses.forEach(course => {
+                if (course.code && !seen.has(course.code)) {
+                    seen.add(course.code);
+                    subjects.push({
+                        code: course.code,
+                        title: course.title,
+                        faculty: "—",
+                        category: course.type === "Practical" ? "Practical" : "Theory",
+                        slot: course.slot || "—",
+                        room: course.room || "—",
+                        totalClasses: 0,
+                        attended: 0,
+                        absent: 0,
+                        percentage: 0,
+                    });
+                }
+            });
         });
     });
     return subjects;
