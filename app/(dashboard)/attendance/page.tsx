@@ -8,80 +8,133 @@ import TabSwitch from "@/components/ui/TabSwitch";
 import AttendanceCard from "@/components/attendance/AttendanceCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
-import { getAttendanceApi } from "@/lib/api";
-import { AttendanceCourse } from "@/utils/types";
+import { getAttendanceApi, getTimetableApi } from "@/lib/api";
+import { AttendanceCourse, TimetableSlot } from "@/utils/types";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
+
+interface TimetableResult {
+    timetable: Record<string, TimetableSlot[]>;
+    batch: number;
+    section: string;
+}
+
+function getTimetableSubjects(timetable: Record<string, TimetableSlot[]>): AttendanceCourse[] {
+    const seen = new Set<string>();
+    const subjects: AttendanceCourse[] = [];
+    Object.values(timetable).forEach(slots => {
+        slots.forEach(slot => {
+            if (slot.code && !seen.has(slot.code)) {
+                seen.add(slot.code);
+                subjects.push({
+                    code: slot.code,
+                    title: slot.title,
+                    faculty: "—",
+                    category: slot.type,
+                    slot: slot.slot,
+                    room: slot.room || "—",
+                    totalClasses: 0,
+                    attended: 0,
+                    absent: 0,
+                    percentage: 0,
+                });
+            }
+        });
+    });
+    return subjects;
+}
 
 export default function AttendancePage() {
     const [activeTab, setActiveTab] = useState("Theory");
     const { data, loading, error } = useFetchWithCache<AttendanceCourse[]>(
         getAttendanceApi as () => Promise<AttendanceCourse[]>,
         "attendance",
-        10000 // 10 seconds TTL like acadia.works
+        10000
+    );
+    const { data: timetableData, loading: timetableLoading } = useFetchWithCache<TimetableResult>(
+        getTimetableApi as () => Promise<TimetableResult>,
+        "timetable",
+        3600000
     );
 
-    const courses = data || [];
-    const filtered = courses.filter((c) => c.category === activeTab);
-    const summary = useAttendanceSummary(courses);
+    const isDown = !!error && !data;
+    const fallbackCourses = isDown && timetableData?.timetable
+        ? getTimetableSubjects(timetableData.timetable)
+        : [];
 
-    if (loading) return <LoadingScreen />;
+    const courses = data || fallbackCourses;
+    const filtered = courses.filter((c) => c.category === activeTab);
+    const summary = useAttendanceSummary(data || []);
+
+    if (loading || (isDown && timetableLoading)) return <LoadingScreen />;
 
     return (
         <PageWrapper>
             <Header title="Attendance" subtitle={`${courses.length} courses this semester`} showGreeting />
 
-            {courses.length > 0 && (
+            {isDown && (
+                <div style={{ margin: "0 20px 16px", padding: "12px 16px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fcd34d", color: "#b45309", fontSize: 13, fontWeight: 600, textAlign: "center" }}>
+                    ⚠️ Academia is currently down. Showing subjects from your timetable. Refresh when back online.
+                </div>
+            )}
+
+            {(data && courses.length > 0) && (
                 <div style={{ padding: "0 20px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                     {[
                         { label: "Average", value: `${summary.avgPercentage}%`, color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe" },
                         { label: "Safe", value: String(summary.safeCourses), color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
                         { label: "At Risk", value: String(summary.dangerCourses), color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
                     ].map((stat, i) => (
-                        <motion.div key={stat.label}
-                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06 }}
+                        <motion.div
+                            key={stat.label}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.08 }}
                             style={{
-                                display: "flex", flexDirection: "column", alignItems: "center",
-                                padding: "18px 8px", borderRadius: 16,
+                                padding: "14px 12px", borderRadius: 16, textAlign: "center",
                                 background: stat.bg, border: `1px solid ${stat.border}`,
-                            }}>
-                            <span style={{ fontSize: 24, fontWeight: 800, color: stat.color }}>{stat.value}</span>
-                            <span style={{ fontSize: 12, color: stat.color, opacity: 0.7, marginTop: 4, fontWeight: 600 }}>{stat.label}</span>
+                            }}
+                        >
+                            <p style={{ fontSize: 20, fontWeight: 800, color: stat.color }}>{stat.value}</p>
+                            <p style={{ fontSize: 11, fontWeight: 600, color: stat.color, opacity: 0.8, marginTop: 2 }}>{stat.label}</p>
                         </motion.div>
                     ))}
                 </div>
             )}
 
-            <div style={{ padding: "0 20px 20px" }}>
-                <TabSwitch tabs={["Theory", "Practical"]} active={activeTab} onChange={setActiveTab} layoutId="attend-tab" />
+            <div style={{ padding: "0 20px 16px" }}>
+                <TabSwitch
+                    tabs={["Theory", "Practical"]}
+                    active={activeTab}
+                    onChange={setActiveTab}
+                />
             </div>
 
-            {error && (
-                <div style={{ padding: "0 20px 16px" }}>
-                    <div style={{ padding: "14px 16px", borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 14, textAlign: "center" }}>
-                        {error}
-                    </div>
-                </div>
-            )}
-
-            <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <AnimatePresence mode="wait">
-                    <motion.div key={activeTab}
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
-                        style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                        {filtered.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 15 }}>
-                                No {activeTab} courses found
-                            </div>
-                        ) : (
-                            filtered.map((course, i) => (
-                                <AttendanceCard key={`${course.code}-${i}`} course={course} index={i} />
-                            ))
-                        )}
-                    </motion.div>
+                    {filtered.length === 0 ? (
+                        <motion.div
+                            key="empty"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontSize: 15 }}
+                        >
+                            No {activeTab.toLowerCase()} courses found
+                        </motion.div>
+                    ) : (
+                        filtered.map((course, i) => (
+                            <motion.div
+                                key={course.code}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                            >
+                                <AttendanceCard course={course} index={i} />
+                            </motion.div>
+                        ))
+                    )}
                 </AnimatePresence>
             </div>
+            <div style={{ height: 120 }} />
         </PageWrapper>
     );
 }
