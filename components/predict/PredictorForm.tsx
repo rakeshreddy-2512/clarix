@@ -6,7 +6,7 @@ import { usePredictor, PlannerDay } from "@/hooks/usePredictor";
 import { useFetch } from "@/hooks/useFetch";
 import { getPlannerApi } from "@/lib/api";
 import PredictResult from "./PredictResult";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Edit3 } from "lucide-react";
 
 interface PlannerData {
     map: Record<string, PlannerDay>;
@@ -97,6 +97,8 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
     const [toDate, setToDate] = useState("");
     const [willAttend, setWillAttend] = useState(true);
     const [showResult, setShowResult] = useState(false);
+    const [manualMode, setManualMode] = useState(false);
+    const [manualPercentages, setManualPercentages] = useState<Record<string, number>>({});
 
     const { data: plannerData } = useFetch<PlannerData>(
         getPlannerApi as () => Promise<PlannerData>
@@ -105,8 +107,22 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
     const plannerMap = plannerData?.map || {};
     const isAllSubjects = selectedCourse === "ALL";
     const course = courses.find((c) => c.code === selectedCourse);
+
+    // In manual mode, override course percentages
+    const effectiveCourses = manualMode
+        ? courses.map(c => ({
+            ...c,
+            percentage: manualPercentages[c.code] ?? c.percentage,
+            attended: manualPercentages[c.code] !== undefined
+                ? Math.round((manualPercentages[c.code] / 100) * c.totalClasses)
+                : c.attended,
+        }))
+        : courses;
+
+    const effectiveCourse = effectiveCourses.find((c) => c.code === selectedCourse);
+
     const result = usePredictor(
-        isAllSubjects ? undefined : course,
+        isAllSubjects ? undefined : effectiveCourse,
         fromDate,
         toDate,
         willAttend,
@@ -115,7 +131,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
     );
 
     const allSubjectsResults = isAllSubjects && fromDate && toDate
-        ? courses.map(c => {
+        ? effectiveCourses.map(c => {
             const from = parseLocalDate(fromDate);
             const to = parseLocalDate(toDate);
             if (from > to) return null;
@@ -129,14 +145,17 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 batch
             );
 
-            const currentPercentage = c.totalClasses > 0 ? c.percentage : 0;
+            const currentPercentage = c.totalClasses > 0 ? c.percentage : (manualPercentages[c.code] ?? 0);
 
             if (futureClasses === 0) {
                 return { course: c, futurePercentage: currentPercentage, delta: 0, futureClasses: 0, currentPercentage };
             }
 
-            const futureTotal = c.totalClasses + futureClasses;
-            const futureAttendedTotal = c.attended + (willAttend ? futureClasses : 0);
+            const totalClasses = c.totalClasses > 0 ? c.totalClasses : 100;
+            const attended = c.totalClasses > 0 ? c.attended : Math.round((currentPercentage / 100) * 100);
+
+            const futureTotal = totalClasses + futureClasses;
+            const futureAttendedTotal = attended + (willAttend ? futureClasses : 0);
             const futurePercentage = futureTotal > 0
                 ? Math.round((futureAttendedTotal / futureTotal) * 100)
                 : 0;
@@ -167,8 +186,100 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
         letterSpacing: "0.06em",
     };
 
+    const isZeroData = courses.every(c => c.totalClasses === 0);
+
     return (
         <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Manual mode toggle — show when SRM is down or data is 0 */}
+            {isZeroData && (
+                <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                        padding: "14px 16px", borderRadius: 14,
+                        background: manualMode ? "#eff6ff" : "#f8fafc",
+                        border: `1px solid ${manualMode ? "#bfdbfe" : "#e2e8f0"}`,
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Edit3 size={16} color={manualMode ? "#1d4ed8" : "#94a3b8"} />
+                        <div>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Manual Mode</p>
+                            <p style={{ fontSize: 12, color: "#94a3b8" }}>Enter your attendance % manually</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => { setManualMode(!manualMode); setShowResult(false); }}
+                        style={{
+                            width: 48, height: 26, borderRadius: 999,
+                            border: "none", cursor: "pointer",
+                            background: manualMode ? "#1d4ed8" : "#e2e8f0",
+                            position: "relative", transition: "background 0.2s",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <motion.div
+                            animate={{ x: manualMode ? 24 : 2 }}
+                            transition={{ type: "spring", bounce: 0.3 }}
+                            style={{
+                                position: "absolute", top: 3,
+                                width: 20, height: 20, borderRadius: "50%",
+                                background: "#ffffff",
+                                boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                            }}
+                        />
+                    </button>
+                </motion.div>
+            )}
+
+            {/* Manual percentage inputs */}
+            {manualMode && isZeroData && (
+                <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                >
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Enter current attendance %
+                    </p>
+                    {courses.map(c => (
+                        <div key={c.code} style={{
+                            display: "flex", alignItems: "center", gap: 12,
+                            padding: "12px 14px", borderRadius: 12,
+                            background: "#ffffff", border: "1px solid #e2e8f0",
+                        }}>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{c.title}</p>
+                                <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.code}</p>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    placeholder="0"
+                                    value={manualPercentages[c.code] ?? ""}
+                                    onChange={e => {
+                                        const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                        setManualPercentages(prev => ({ ...prev, [c.code]: val }));
+                                        setShowResult(false);
+                                    }}
+                                    style={{
+                                        width: 64, padding: "8px 10px", borderRadius: 8,
+                                        border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                                        fontSize: 14, fontWeight: 700, color: "#0f172a",
+                                        outline: "none", textAlign: "center",
+                                    }}
+                                />
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#64748b" }}>%</span>
+                            </div>
+                        </div>
+                    ))}
+                </motion.div>
+            )}
+
             {/* Course selector */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <label style={labelStyle}>Select Course</label>
@@ -274,7 +385,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                 {isAllSubjects ? "Predict All Subjects" : "Predict Attendance"}
             </motion.button>
 
-            {/* ✅ Note about optional classes */}
+            {/* Note */}
             <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -290,8 +401,8 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
             </motion.div>
 
             {/* Single course result */}
-            {showResult && !isAllSubjects && course && result && (
-                <PredictResult course={course} result={result} />
+            {showResult && !isAllSubjects && effectiveCourse && result && (
+                <PredictResult course={effectiveCourse} result={result} />
             )}
 
             {/* All subjects result */}
@@ -326,9 +437,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                     }}
                                 >
                                     <div>
-                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
-                                            {c.title}
-                                        </p>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{c.title}</p>
                                         <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 2 }}>
                                             {c.code} • {c.category}
                                         </p>
@@ -343,14 +452,11 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current</p>
                                             <p style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{currentPercentage}%</p>
                                         </div>
-
                                         <div style={{ fontSize: 20, color: "#94a3b8" }}>→</div>
-
                                         <div style={{ textAlign: "center" }}>
                                             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Predicted</p>
                                             <p style={{ fontSize: 24, fontWeight: 800, color: resultColor }}>{futurePercentage}%</p>
                                         </div>
-
                                         <div style={{
                                             padding: "6px 12px", borderRadius: 10,
                                             background: resultBg, border: `1px solid ${resultBorder}`,
@@ -368,6 +474,7 @@ export default function PredictorForm({ courses, batch = 1 }: { courses: Attenda
                     </div>
                 </AnimatePresence>
             )}
+            <div style={{ height: 40 }} />
         </div>
     );
 }
