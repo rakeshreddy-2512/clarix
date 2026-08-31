@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDarkMode } from "@/hooks/useDarkMode";
 import dynamic from "next/dynamic";
 const SupportModal = dynamic(() => import("@/components/support/SupportModal"), { ssr: false });
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,6 +44,7 @@ const logoStyles = `
 export default function BottomNav() {
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { isDark, toggle } = useDarkMode();
     const [supportOpen, setSupportOpen] = useState(false);
 
     return (
@@ -230,8 +232,18 @@ export default function BottomNav() {
                                 })}
                             </div>
 
-                            {/* Donate */}
-                            <div style={{ marginTop: "auto", paddingTop: 16, position: "relative", zIndex: 1 }}>
+                            {/* Dark mode + Donate */}
+                            <div style={{ marginTop: "auto", paddingTop: 16, position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                                <button onClick={toggle} style={{
+                                    display: "flex", alignItems: "center", gap: 10,
+                                    padding: "11px 14px", borderRadius: 12,
+                                    background: "rgba(255,255,255,0.08)",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    cursor: "pointer", width: "100%", transition: "all 0.15s",
+                                }}>
+                                    <span style={{ fontSize: 16 }}>{isDark ? "☀️" : "🌙"}</span>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{isDark ? "Light Mode" : "Dark Mode"}</span>
+                                </button>
                                 <button onClick={() => setSupportOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", width: "100%", transition: "all 0.15s" }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>Donate</span>
                                 </button>
