@@ -5,7 +5,7 @@ import { getTimetableApi, getProfileApi, getPlannerApi } from "@/lib/api";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Header from "@/components/layout/Header";
-import { Download, ChevronDown, Edit2, X, RotateCcw, Check } from "lucide-react";
+import { Download, ChevronDown, Edit2, X, RotateCcw, Check, Plus, ArrowRight } from "lucide-react";
 import { getToken } from "@/lib/session";
 
 interface Course {
@@ -28,6 +28,62 @@ interface PlannerData {
     map: Record<string, PlannerDay>; semester: string;
 }
 
+const BATCH1_SCHEDULE: Record<string, { day: number; startTime: string; endTime: string }[]> = {
+    A: [{ day: 1, startTime: "08:00", endTime: "09:40" }, { day: 2, startTime: "04:00", endTime: "04:50" }, { day: 3, startTime: "09:45", endTime: "10:35" }],
+    B: [{ day: 2, startTime: "12:30", endTime: "02:15" }, { day: 3, startTime: "11:35", endTime: "12:25" }, { day: 4, startTime: "02:20", endTime: "03:10" }],
+    C: [{ day: 3, startTime: "08:00", endTime: "09:40" }, { day: 4, startTime: "04:00", endTime: "04:50" }, { day: 5, startTime: "09:45", endTime: "10:35" }],
+    D: [{ day: 3, startTime: "10:40", endTime: "11:30" }, { day: 4, startTime: "12:30", endTime: "02:15" }, { day: 5, startTime: "11:35", endTime: "12:25" }],
+    E: [{ day: 4, startTime: "03:10", endTime: "04:00" }, { day: 5, startTime: "08:00", endTime: "09:40" }],
+    F: [{ day: 1, startTime: "09:45", endTime: "11:30" }, { day: 5, startTime: "10:40", endTime: "11:30" }],
+    G: [{ day: 1, startTime: "11:35", endTime: "12:25" }, { day: 2, startTime: "02:20", endTime: "04:00" }],
+    P6: [{ day: 1, startTime: "12:30", endTime: "01:20" }], P7: [{ day: 1, startTime: "01:25", endTime: "02:15" }],
+    P8: [{ day: 1, startTime: "02:20", endTime: "03:10" }], P9: [{ day: 1, startTime: "03:10", endTime: "04:00" }],
+    P10: [{ day: 1, startTime: "04:00", endTime: "04:50" }], L11: [{ day: 1, startTime: "04:50", endTime: "05:30" }],
+    L12: [{ day: 1, startTime: "05:30", endTime: "06:10" }], P11: [{ day: 2, startTime: "08:00", endTime: "08:50" }],
+    P12: [{ day: 2, startTime: "08:50", endTime: "09:40" }], P13: [{ day: 2, startTime: "09:45", endTime: "10:35" }],
+    P14: [{ day: 2, startTime: "10:40", endTime: "11:30" }], P15: [{ day: 2, startTime: "11:35", endTime: "12:25" }],
+    L21: [{ day: 2, startTime: "04:50", endTime: "05:30" }], L22: [{ day: 2, startTime: "05:30", endTime: "06:10" }],
+    P26: [{ day: 3, startTime: "12:30", endTime: "01:20" }], P27: [{ day: 3, startTime: "01:25", endTime: "02:15" }],
+    P28: [{ day: 3, startTime: "02:20", endTime: "03:10" }], P29: [{ day: 3, startTime: "03:10", endTime: "04:00" }],
+    P30: [{ day: 3, startTime: "04:00", endTime: "04:50" }], L31: [{ day: 3, startTime: "04:50", endTime: "05:30" }],
+    L32: [{ day: 3, startTime: "05:30", endTime: "06:10" }], P31: [{ day: 4, startTime: "08:00", endTime: "08:50" }],
+    P32: [{ day: 4, startTime: "08:50", endTime: "09:40" }], P33: [{ day: 4, startTime: "09:45", endTime: "10:35" }],
+    P34: [{ day: 4, startTime: "10:40", endTime: "11:30" }], P35: [{ day: 4, startTime: "11:35", endTime: "12:25" }],
+    L41: [{ day: 4, startTime: "04:50", endTime: "05:30" }], L42: [{ day: 4, startTime: "05:30", endTime: "06:10" }],
+    P46: [{ day: 5, startTime: "12:30", endTime: "01:20" }], P47: [{ day: 5, startTime: "01:25", endTime: "02:15" }],
+    P48: [{ day: 5, startTime: "02:20", endTime: "03:10" }], P49: [{ day: 5, startTime: "03:10", endTime: "04:00" }],
+    P50: [{ day: 5, startTime: "04:00", endTime: "04:50" }], L51: [{ day: 5, startTime: "04:50", endTime: "05:30" }],
+    L52: [{ day: 5, startTime: "05:30", endTime: "06:10" }],
+};
+
+const BATCH2_SCHEDULE: Record<string, { day: number; startTime: string; endTime: string }[]> = {
+    A: [{ day: 1, startTime: "12:30", endTime: "02:15" }, { day: 2, startTime: "11:35", endTime: "12:25" }, { day: 3, startTime: "02:20", endTime: "03:10" }],
+    B: [{ day: 2, startTime: "08:00", endTime: "09:40" }, { day: 4, startTime: "08:00", endTime: "09:40" }],
+    C: [{ day: 3, startTime: "12:30", endTime: "02:15" }, { day: 4, startTime: "11:35", endTime: "12:25" }, { day: 5, startTime: "02:20", endTime: "03:10" }],
+    D: [{ day: 1, startTime: "08:00", endTime: "09:40" }, { day: 3, startTime: "03:10", endTime: "04:00" }, { day: 5, startTime: "04:00", endTime: "04:50" }],
+    E: [{ day: 4, startTime: "10:40", endTime: "11:30" }, { day: 5, startTime: "12:30", endTime: "02:15" }],
+    F: [{ day: 1, startTime: "02:20", endTime: "03:10" }, { day: 5, startTime: "03:10", endTime: "04:00" }],
+    G: [{ day: 1, startTime: "10:40", endTime: "11:30" }, { day: 2, startTime: "11:35", endTime: "04:00" }],
+    P1: [{ day: 1, startTime: "08:00", endTime: "08:50" }], P2: [{ day: 1, startTime: "08:50", endTime: "09:40" }],
+    P3: [{ day: 1, startTime: "09:45", endTime: "10:35" }], P4: [{ day: 1, startTime: "10:40", endTime: "11:30" }],
+    P5: [{ day: 1, startTime: "11:35", endTime: "12:25" }], L11: [{ day: 1, startTime: "04:50", endTime: "05:30" }],
+    L12: [{ day: 1, startTime: "05:30", endTime: "06:10" }], P16: [{ day: 2, startTime: "12:30", endTime: "01:20" }],
+    P17: [{ day: 2, startTime: "01:25", endTime: "02:15" }], P18: [{ day: 2, startTime: "02:20", endTime: "03:10" }],
+    P19: [{ day: 2, startTime: "03:10", endTime: "04:00" }], P20: [{ day: 2, startTime: "04:00", endTime: "04:50" }],
+    L21: [{ day: 2, startTime: "04:50", endTime: "05:30" }], L22: [{ day: 2, startTime: "05:30", endTime: "06:10" }],
+    P21: [{ day: 3, startTime: "08:00", endTime: "08:50" }], P22: [{ day: 3, startTime: "08:50", endTime: "09:40" }],
+    P23: [{ day: 3, startTime: "09:45", endTime: "10:35" }], P24: [{ day: 3, startTime: "10:40", endTime: "11:30" }],
+    P25: [{ day: 3, startTime: "11:35", endTime: "12:25" }], L31: [{ day: 3, startTime: "04:50", endTime: "05:30" }],
+    L32: [{ day: 3, startTime: "05:30", endTime: "06:10" }], P36: [{ day: 4, startTime: "12:30", endTime: "01:20" }],
+    P37: [{ day: 4, startTime: "01:25", endTime: "02:15" }], P38: [{ day: 4, startTime: "02:20", endTime: "03:10" }],
+    P39: [{ day: 4, startTime: "03:10", endTime: "04:00" }], P40: [{ day: 4, startTime: "04:00", endTime: "04:50" }],
+    L41: [{ day: 4, startTime: "04:50", endTime: "05:30" }], L42: [{ day: 4, startTime: "05:30", endTime: "06:10" }],
+    P41: [{ day: 5, startTime: "08:00", endTime: "08:50" }], P42: [{ day: 5, startTime: "08:50", endTime: "09:40" }],
+    P43: [{ day: 5, startTime: "09:45", endTime: "10:35" }], P44: [{ day: 5, startTime: "10:40", endTime: "11:30" }],
+    P45: [{ day: 5, startTime: "11:35", endTime: "12:25" }], L51: [{ day: 5, startTime: "04:50", endTime: "05:30" }],
+    L52: [{ day: 5, startTime: "05:30", endTime: "06:10" }],
+};
+
 function getTodayIST(): string {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
@@ -38,26 +94,85 @@ function getTodayIST(): string {
     return `${y}-${m}-${d}`;
 }
 
+// Get occupied slots from timetable
+function getOccupiedSlots(timetable: Timetable): Set<string> {
+    const occupied = new Set<string>();
+    Object.values(timetable).forEach(slots => {
+        slots.forEach(slot => {
+            slot.courses.forEach(course => {
+                if (course.slot) occupied.add(course.slot.toUpperCase());
+            });
+        });
+    });
+    return occupied;
+}
+
+// Get available slots (all minus occupied)
+function getAvailableSlots(timetable: Timetable, batch: number, excludeSlot?: string): string[] {
+    const schedule = batch === 2 ? BATCH2_SCHEDULE : BATCH1_SCHEDULE;
+    const occupied = getOccupiedSlots(timetable);
+    if (excludeSlot) occupied.delete(excludeSlot.toUpperCase());
+    return Object.keys(schedule).filter(s => !occupied.has(s));
+}
+
+// Add subject to timetable using slot mapping
+function addSubjectToTimetable(
+    timetable: Timetable,
+    slotName: string,
+    course: Course,
+    batch: number
+): Timetable {
+    const schedule = batch === 2 ? BATCH2_SCHEDULE : BATCH1_SCHEDULE;
+    const slotSchedule = schedule[slotName];
+    if (!slotSchedule) return timetable;
+
+    const updated = JSON.parse(JSON.stringify(timetable));
+    slotSchedule.forEach(({ day, startTime, endTime }) => {
+        const existing = updated[day].find((s: TimetableSlot) => s.startTime === startTime && s.endTime === endTime);
+        if (existing) {
+            existing.courses.push({ ...course, slot: slotName });
+        } else {
+            updated[day].push({ startTime, endTime, courses: [{ ...course, slot: slotName }] });
+            updated[day].sort((a: TimetableSlot, b: TimetableSlot) => {
+                const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (h < 7 ? h + 12 : h) * 60 + m; };
+                return toMin(a.startTime) - toMin(b.startTime);
+            });
+        }
+    });
+    return updated;
+}
+
+// Remove subject by slot name from all day orders
+function removeSubjectBySlot(timetable: Timetable, slotName: string): Timetable {
+    const updated = JSON.parse(JSON.stringify(timetable));
+    Object.keys(updated).forEach(day => {
+        updated[Number(day)] = updated[Number(day)]
+            .map((slot: TimetableSlot) => ({
+                ...slot,
+                courses: slot.courses.filter((c: Course) => c.slot?.toUpperCase() !== slotName.toUpperCase()),
+            }))
+            .filter((slot: TimetableSlot) => slot.courses.length > 0);
+    });
+    return updated;
+}
+
 const SRM_SLOTS = [
-    { label: "Slot 1",  start: "08:00", end: "08:50" },
-    { label: "Slot 2",  start: "08:50", end: "09:40" },
-    { label: "Slot 3",  start: "09:45", end: "10:35" },
-    { label: "Slot 4",  start: "10:40", end: "11:30" },
-    { label: "Slot 5",  start: "11:35", end: "12:25" },
-    { label: "Slot 6",  start: "12:30", end: "01:20" },
-    { label: "Slot 7",  start: "01:25", end: "02:15" },
-    { label: "Slot 8",  start: "02:20", end: "03:10" },
-    { label: "Slot 9",  start: "03:10", end: "04:00" },
+    { label: "Slot 1", start: "08:00", end: "08:50" },
+    { label: "Slot 2", start: "08:50", end: "09:40" },
+    { label: "Slot 3", start: "09:45", end: "10:35" },
+    { label: "Slot 4", start: "10:40", end: "11:30" },
+    { label: "Slot 5", start: "11:35", end: "12:25" },
+    { label: "Slot 6", start: "12:30", end: "01:20" },
+    { label: "Slot 7", start: "01:25", end: "02:15" },
+    { label: "Slot 8", start: "02:20", end: "03:10" },
+    { label: "Slot 9", start: "03:10", end: "04:00" },
     { label: "Slot 10", start: "04:00", end: "04:50" },
     { label: "Slot 11", start: "04:50", end: "05:30" },
     { label: "Slot 12", start: "05:30", end: "06:10" },
 ];
 
 function getCoveredSlots(startTime: string, endTime: string): number[] {
-    const toMin = (t: string) => {
-        const [h, m] = t.split(":").map(Number);
-        return (h < 7 ? h + 12 : h) * 60 + m;
-    };
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (h < 7 ? h + 12 : h) * 60 + m; };
     const courseStart = toMin(startTime);
     const courseEnd = toMin(endTime);
     const covered: number[] = [];
@@ -79,7 +194,6 @@ async function drawTimetable(doc: any, timetable: Timetable, batch: number, sect
     const darkText: [number, number, number] = [30, 30, 30];
     const orangeText: [number, number, number] = [200, 90, 0];
     const grayText: [number, number, number] = [100, 100, 100];
-
     doc.setFillColor(...lightOrange); doc.rect(0, 0, pageW, 20, "F");
     doc.setDrawColor(...black); doc.setLineWidth(0.4); doc.rect(0, 0, pageW, 20, "S");
     doc.setTextColor(...darkText); doc.setFontSize(13); doc.setFont("helvetica", "bold");
@@ -92,17 +206,14 @@ async function drawTimetable(doc: any, timetable: Timetable, batch: number, sect
     if (section) parts.push(`Section: ${section}`);
     parts.push(`Date: ${new Date().toLocaleDateString("en-IN")}`);
     doc.text(parts.join("     "), margin + 2, 15);
-
     const tableTop = 22, doColW = 10;
     const slotColW = (pageW - margin * 2 - doColW) / SRM_SLOTS.length;
     const days = [1, 2, 3, 4, 5];
     const rowH = (pageH - tableTop - 5) / (days.length + 1);
-
     doc.setFillColor(...lightOrange); doc.setDrawColor(...black); doc.setLineWidth(0.4);
     doc.rect(margin, tableTop, doColW, rowH, "FD");
     doc.setTextColor(...darkText); doc.setFontSize(6); doc.setFont("helvetica", "bold");
     doc.text("DO", margin + doColW / 2, tableTop + rowH / 2 + 1, { align: "center" });
-
     SRM_SLOTS.forEach((slot, i) => {
         const x = margin + doColW + i * slotColW;
         doc.setFillColor(...lightOrange); doc.setDrawColor(...black); doc.setLineWidth(0.4);
@@ -112,7 +223,6 @@ async function drawTimetable(doc: any, timetable: Timetable, batch: number, sect
         doc.setFont("helvetica", "normal"); doc.setFontSize(5);
         doc.text(`${slot.start}-${slot.end}`, x + slotColW / 2, tableTop + rowH / 2 + 2, { align: "center" });
     });
-
     days.forEach((day, dayIdx) => {
         const y = tableTop + (dayIdx + 1) * rowH;
         doc.setFillColor(...doRowOrange); doc.setDrawColor(...black); doc.setLineWidth(0.4);
@@ -164,12 +274,10 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
     const canvas = document.createElement("canvas");
     canvas.width = pageW; canvas.height = pageH;
     const ctx = canvas.getContext("2d")!;
-
     const drawRect = (x: number, y: number, w: number, h: number, fill: string) => {
         ctx.fillStyle = fill; ctx.fillRect(x, y, w, h);
         ctx.strokeStyle = "#000"; ctx.lineWidth = 0.4 * scale; ctx.strokeRect(x, y, w, h);
     };
-
     ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pageW, pageH);
     drawRect(0, 0, pageW, 20 * scale, "#ffd599");
     ctx.fillStyle = "#1e1e1e";
@@ -184,17 +292,14 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
     if (section) parts.push(`Section: ${section}`);
     parts.push(`Date: ${new Date().toLocaleDateString("en-IN")}`);
     ctx.fillText(parts.join("     "), margin + 2 * scale, 16 * scale);
-
     const tableTop = 22 * scale, doColW = 10 * scale;
     const slotColW = (pageW - margin * 2 - doColW) / SRM_SLOTS.length;
     const days = [1, 2, 3, 4, 5];
     const rowH = (pageH - tableTop - 5 * scale) / (days.length + 1);
     const fs = (n: number) => `${Math.round(n * scale * 0.35)}px`;
-
     drawRect(margin, tableTop, doColW, rowH, "#ffd599");
     ctx.fillStyle = "#1e1e1e"; ctx.font = `bold ${fs(6)}`; ctx.textAlign = "center";
     ctx.fillText("DO", margin + doColW / 2, tableTop + rowH / 2 + 2 * scale);
-
     SRM_SLOTS.forEach((slot, i) => {
         const x = margin + doColW + i * slotColW;
         drawRect(x, tableTop, slotColW, rowH, "#ffd599");
@@ -203,16 +308,13 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
         ctx.font = fs(5);
         ctx.fillText(`${slot.start}-${slot.end}`, x + slotColW / 2, tableTop + rowH / 2 + 3 * scale);
     });
-
     days.forEach((day, dayIdx) => {
         const y = tableTop + (dayIdx + 1) * rowH;
         drawRect(margin, y, doColW, rowH, "#ffebb8");
         ctx.fillStyle = "#c85a00"; ctx.font = `bold ${fs(6.5)}`; ctx.textAlign = "center";
         ctx.fillText(`DO ${day}`, margin + doColW / 2, y + rowH / 2 + 2 * scale);
-
         const bg = dayIdx % 2 === 0 ? "#ffffff" : "#f8f8f8";
         SRM_SLOTS.forEach((_, i) => drawRect(margin + doColW + i * slotColW, y, slotColW, rowH, bg));
-
         const daySlots = timetable[day] || [];
         const filledSlots = new Set<number>();
         daySlots.forEach(slot => {
@@ -226,31 +328,26 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
             drawRect(cellX, y, cellW, rowH, bg);
             ctx.fillStyle = "#f5f5f5";
             ctx.fillRect(cellX + 0.5 * scale, y + 0.5 * scale, cellW - 1 * scale, rowH - 1 * scale);
-
             ctx.fillStyle = "#1e1e1e"; ctx.font = `bold ${fs(5.5)}`; ctx.textAlign = "center";
             const words = course.title.split(" ");
             const linesArr: string[] = [];
             let current = "";
             words.forEach(word => {
                 const test = current ? `${current} ${word}` : word;
-                if (ctx.measureText(test).width > cellW - 4 * scale && current) {
-                    linesArr.push(current); current = word;
-                } else { current = test; }
+                if (ctx.measureText(test).width > cellW - 4 * scale && current) { linesArr.push(current); current = word; }
+                else { current = test; }
             });
             if (current) linesArr.push(current);
             const lineH = parseInt(fs(5.5)) * 1.3;
             const totalH = linesArr.length * lineH;
             const startY = y + (rowH - totalH) / 2 + parseInt(fs(5.5));
             linesArr.forEach((line, li) => ctx.fillText(line, cellX + cellW / 2, startY + li * lineH));
-
             ctx.fillStyle = "#646464"; ctx.font = fs(5);
             ctx.fillText(course.room, cellX + cellW / 2, y + rowH - 2.5 * scale);
         });
     });
-
     ctx.fillStyle = "#969696"; ctx.font = fs(5); ctx.textAlign = "center";
     ctx.fillText("Generated by Clarix — Academia Tracker", pageW / 2, pageH - 1 * scale);
-
     const link = document.createElement("a");
     link.download = `timetable-${profile?.regNo || "clarix"}.png`;
     link.href = canvas.toDataURL("image/png");
@@ -265,6 +362,10 @@ export default function TimetablePage() {
     const [editedTimetable, setEditedTimetable] = useState<Timetable | null>(null);
     const [hasCustom, setHasCustom] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState<{ slotIndex: number; courseIndex: number; course: Course } | null>(null);
+    const [showChangeSlot, setShowChangeSlot] = useState(false);
+    const [showAddSubject, setShowAddSubject] = useState(false);
+    const [newSubject, setNewSubject] = useState({ title: "", code: "", room: "", type: "Theory", slot: "" });
     const menuRef = useRef<HTMLDivElement>(null);
 
     const { data, loading } = useFetchWithCache<TimetableResult>(
@@ -280,18 +381,12 @@ export default function TimetablePage() {
         "planner", 15 * 60 * 1000
     );
 
-    // Load custom timetable on mount
     useEffect(() => {
         async function loadCustom() {
             const token = getToken();
-            const res = await fetch("/api/timetable/custom", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch("/api/timetable/custom", { headers: { Authorization: `Bearer ${token}` } });
             const json = await res.json();
-            if (json.success && json.data) {
-                setEditedTimetable(json.data);
-                setHasCustom(true);
-            }
+            if (json.success && json.data) { setEditedTimetable(json.data); setHasCustom(true); }
         }
         loadCustom();
     }, []);
@@ -311,6 +406,7 @@ export default function TimetablePage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const batch = data?.batch || 1;
     const originalTimetable = data?.timetable ?? {};
     const activeTimetable = editMode
         ? (editedTimetable || originalTimetable)
@@ -320,17 +416,41 @@ export default function TimetablePage() {
     const handleEditStart = () => {
         setEditedTimetable(JSON.parse(JSON.stringify(hasCustom && editedTimetable ? editedTimetable : originalTimetable)));
         setEditMode(true);
+        setSelectedCourse(null);
+        setShowChangeSlot(false);
+        setShowAddSubject(false);
     };
 
-    const handleRemoveCourse = (slotIndex: number, courseIndex: number) => {
+    const handleRemoveCourse = (course: Course) => {
         if (!editedTimetable) return;
-        const updated = JSON.parse(JSON.stringify(editedTimetable));
-        updated[selectedDay][slotIndex].courses.splice(courseIndex, 1);
-        // Remove slot if no courses left
-        if (updated[selectedDay][slotIndex].courses.length === 0) {
-            updated[selectedDay].splice(slotIndex, 1);
-        }
+        const updated = removeSubjectBySlot(editedTimetable, course.slot);
         setEditedTimetable(updated);
+        setSelectedCourse(null);
+    };
+
+    const handleChangeSlot = (newSlot: string) => {
+        if (!editedTimetable || !selectedCourse) return;
+        const oldSlot = selectedCourse.course.slot;
+        let updated = removeSubjectBySlot(editedTimetable, oldSlot);
+        updated = addSubjectToTimetable(updated, newSlot, { ...selectedCourse.course, slot: newSlot }, batch);
+        setEditedTimetable(updated);
+        setSelectedCourse(null);
+        setShowChangeSlot(false);
+    };
+
+    const handleAddSubject = () => {
+        if (!editedTimetable || !newSubject.title || !newSubject.slot) return;
+        const course: Course = {
+            title: newSubject.title,
+            code: newSubject.code || newSubject.title.substring(0, 6).toUpperCase(),
+            room: newSubject.room || "—",
+            type: newSubject.type,
+            slot: newSubject.slot,
+        };
+        const updated = addSubjectToTimetable(editedTimetable, newSubject.slot, course, batch);
+        setEditedTimetable(updated);
+        setNewSubject({ title: "", code: "", room: "", type: "Theory", slot: "" });
+        setShowAddSubject(false);
     };
 
     const handleConfirm = async () => {
@@ -345,11 +465,9 @@ export default function TimetablePage() {
             });
             setHasCustom(true);
             setEditMode(false);
-        } catch {
-            console.error("Failed to save timetable");
-        } finally {
-            setSaving(false);
-        }
+            setSelectedCourse(null);
+        } catch { console.error("Failed to save timetable"); }
+        finally { setSaving(false); }
     };
 
     const handleRevert = async () => {
@@ -357,34 +475,27 @@ export default function TimetablePage() {
         setSaving(true);
         try {
             const token = getToken();
-            await fetch("/api/timetable/custom", {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await fetch("/api/timetable/custom", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
             setHasCustom(false);
             setEditedTimetable(null);
             setEditMode(false);
-        } catch {
-            console.error("Failed to revert timetable");
-        } finally {
-            setSaving(false);
-        }
+        } catch { console.error("Failed to revert timetable"); }
+        finally { setSaving(false); }
     };
 
     const handleExport = async (format: "pdf" | "jpeg") => {
         if (!data) return;
-        setShowMenu(false);
-        setExporting(true);
+        setShowMenu(false); setExporting(true);
         try {
-            if (format === "pdf") {
-                await exportTimetablePDF(activeTimetable, data.batch, data.section, profileData as Student | null);
-            } else {
-                await exportTimetableJPEG(activeTimetable, data.batch, data.section, profileData as Student | null);
-            }
-        } finally {
-            setExporting(false);
-        }
+            if (format === "pdf") await exportTimetablePDF(activeTimetable, data.batch, data.section, profileData as Student | null);
+            else await exportTimetableJPEG(activeTimetable, data.batch, data.section, profileData as Student | null);
+        } finally { setExporting(false); }
     };
+
+    const availableSlots = editedTimetable ? getAvailableSlots(editedTimetable, batch) : [];
+    const changableSlots = editedTimetable && selectedCourse
+        ? getAvailableSlots(editedTimetable, batch, selectedCourse.course.slot)
+        : [];
 
     if (loading) return <LoadingScreen />;
     const todayDayOrder = plannerData?.map?.[getTodayIST()]?.dayOrder;
@@ -397,72 +508,51 @@ export default function TimetablePage() {
                     subtitle={new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                 />
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    {/* Edit / Confirm / Cancel buttons */}
                     {!editMode ? (
-                        <button
-                            onClick={handleEditStart}
-                            disabled={!data}
-                            style={{
-                                display: "flex", alignItems: "center", gap: 6,
-                                padding: "8px 14px", borderRadius: 12,
-                                background: hasCustom ? "#eff6ff" : "#f1f5f9",
-                                color: hasCustom ? "#1d4ed8" : "#64748b",
-                                border: hasCustom ? "1px solid #bfdbfe" : "1px solid #e2e8f0",
-                                cursor: "pointer", fontSize: 13, fontWeight: 600,
-                            }}
-                        >
+                        <button onClick={handleEditStart} disabled={!data} style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 14px", borderRadius: 12,
+                            background: hasCustom ? "#eff6ff" : "#f1f5f9",
+                            color: hasCustom ? "#1d4ed8" : "#64748b",
+                            border: hasCustom ? "1px solid #bfdbfe" : "1px solid #e2e8f0",
+                            cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        }}>
                             <Edit2 size={13} />
                             {hasCustom ? "Edited" : "Edit"}
                         </button>
                     ) : (
                         <>
-                            <button
-                                onClick={() => { setEditMode(false); setEditedTimetable(hasCustom ? editedTimetable : null); }}
-                                style={{
-                                    display: "flex", alignItems: "center", gap: 6,
-                                    padding: "8px 14px", borderRadius: 12,
-                                    background: "#f1f5f9", color: "#64748b",
-                                    border: "1px solid #e2e8f0",
-                                    cursor: "pointer", fontSize: 13, fontWeight: 600,
-                                }}
-                            >
-                                <X size={13} />
-                                Cancel
+                            <button onClick={() => { setEditMode(false); setSelectedCourse(null); setShowChangeSlot(false); setShowAddSubject(false); }} style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                padding: "8px 14px", borderRadius: 12,
+                                background: "#f1f5f9", color: "#64748b",
+                                border: "1px solid #e2e8f0", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                            }}>
+                                <X size={13} />Cancel
                             </button>
-                            <button
-                                onClick={handleConfirm}
-                                disabled={saving}
-                                style={{
-                                    display: "flex", alignItems: "center", gap: 6,
-                                    padding: "8px 14px", borderRadius: 12,
-                                    background: "#1d4ed8", color: "white",
-                                    border: "none",
-                                    cursor: saving ? "not-allowed" : "pointer",
-                                    fontSize: 13, fontWeight: 600,
-                                }}
-                            >
+                            <button onClick={handleConfirm} disabled={saving} style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                padding: "8px 14px", borderRadius: 12,
+                                background: "#1d4ed8", color: "white",
+                                border: "none", cursor: saving ? "not-allowed" : "pointer",
+                                fontSize: 13, fontWeight: 600,
+                            }}>
                                 <Check size={13} />
                                 {saving ? "Saving..." : "Confirm"}
                             </button>
                         </>
                     )}
-
-                    {/* Export button */}
                     <div ref={menuRef} style={{ position: "relative" }}>
-                        <button
-                            onClick={() => setShowMenu(prev => !prev)}
-                            disabled={exporting || !data}
-                            style={{
-                                display: "flex", alignItems: "center", gap: 6,
-                                padding: "8px 16px", borderRadius: 12,
-                                background: exporting ? "#e2e8f0" : "#ff6f00",
-                                color: exporting ? "#94a3b8" : "white",
-                                border: "none", cursor: exporting ? "not-allowed" : "pointer",
-                                fontSize: 13, fontWeight: 600,
-                                boxShadow: exporting ? "none" : "0 2px 8px rgba(255,111,0,0.4)",
-                                transition: "all 0.2s", whiteSpace: "nowrap",
-                            }}
-                        >
+                        <button onClick={() => setShowMenu(prev => !prev)} disabled={exporting || !data} style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 16px", borderRadius: 12,
+                            background: exporting ? "#e2e8f0" : "#ff6f00",
+                            color: exporting ? "#94a3b8" : "white",
+                            border: "none", cursor: exporting ? "not-allowed" : "pointer",
+                            fontSize: 13, fontWeight: 600,
+                            boxShadow: exporting ? "none" : "0 2px 8px rgba(255,111,0,0.4)",
+                            transition: "all 0.2s", whiteSpace: "nowrap",
+                        }}>
                             <Download size={14} />
                             {exporting ? "Exporting..." : "Export"}
                             <ChevronDown size={13} style={{ marginLeft: 2 }} />
@@ -475,17 +565,14 @@ export default function TimetablePage() {
                                 border: "1px solid var(--border)", overflow: "hidden", zIndex: 100, minWidth: 140,
                             }}>
                                 {(["pdf", "jpeg"] as const).map((fmt, idx) => (
-                                    <button
-                                        key={fmt}
-                                        onClick={() => handleExport(fmt)}
-                                        style={{
-                                            display: "flex", alignItems: "center", gap: 10,
-                                            width: "100%", padding: "12px 16px",
-                                            background: "none", border: "none",
-                                            cursor: "pointer", fontSize: 13, fontWeight: 600,
-                                            color: "var(--text-primary)", textAlign: "left",
-                                            borderBottom: idx === 0 ? "1px solid #f1f5f9" : "none",
-                                        }}
+                                    <button key={fmt} onClick={() => handleExport(fmt)} style={{
+                                        display: "flex", alignItems: "center", gap: 10,
+                                        width: "100%", padding: "12px 16px",
+                                        background: "none", border: "none",
+                                        cursor: "pointer", fontSize: 13, fontWeight: 600,
+                                        color: "var(--text-primary)", textAlign: "left",
+                                        borderBottom: idx === 0 ? "1px solid #f1f5f9" : "none",
+                                    }}
                                         onMouseEnter={e => (e.currentTarget.style.background = "#fff3e0")}
                                         onMouseLeave={e => (e.currentTarget.style.background = "none")}
                                     >
@@ -500,19 +587,10 @@ export default function TimetablePage() {
 
             {/* Custom timetable indicator */}
             {hasCustom && !editMode && (
-                <div style={{ margin: "8px 20px 0", padding: "10px 14px", borderRadius: 10, background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1d4ed8" }}>✏️ Showing your edited timetable</p>
-                    <button
-                        onClick={handleRevert}
-                        disabled={saving}
-                        style={{
-                            display: "flex", alignItems: "center", gap: 4,
-                            fontSize: 12, fontWeight: 600, color: "#dc2626",
-                            background: "none", border: "none", cursor: "pointer",
-                        }}
-                    >
-                        <RotateCcw size={12} />
-                        Revert
+                <div style={{ margin: "8px 20px 0", padding: "6px 10px", borderRadius: 20, background: "#eff6ff", border: "1px solid #bfdbfe", display: "inline-flex", alignItems: "center", gap: 8, width: "fit-content" }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#1d4ed8" }}>✏️ Edited</p>
+                    <button onClick={handleRevert} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#dc2626", background: "none", border: "none", cursor: "pointer" }}>
+                        <RotateCcw size={12} />Revert
                     </button>
                 </div>
             )}
@@ -520,27 +598,145 @@ export default function TimetablePage() {
             {/* Edit mode banner */}
             {editMode && (
                 <div style={{ margin: "8px 20px 0", padding: "10px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fcd34d" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Edit mode — tap ✕ on any subject to remove it. Reminders will update after confirming.</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Tap a subject to remove or change its slot. Reminders will update after confirming.</p>
+                </div>
+            )}
+
+            {/* Selected course actions */}
+            {editMode && selectedCourse && !showChangeSlot && (
+                <div style={{ margin: "8px 20px 0", padding: "14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 10 }}>
+                        {selectedCourse.course.title}
+                        <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>Slot {selectedCourse.course.slot}</span>
+                    </p>
+                    <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => handleRemoveCourse(selectedCourse.course)} style={{
+                            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                            background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer",
+                        }}>
+                            Remove Subject
+                        </button>
+                        <button onClick={() => setShowChangeSlot(true)} style={{
+                            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                            background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        }}>
+                            <ArrowRight size={13} />Change Slot
+                        </button>
+                        <button onClick={() => setSelectedCourse(null)} style={{
+                            padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                            background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0", cursor: "pointer",
+                        }}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Change slot picker */}
+            {editMode && showChangeSlot && selectedCourse && (
+                <div style={{ margin: "8px 20px 0", padding: "14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Select new slot for {selectedCourse.course.title}</p>
+                        <button onClick={() => setShowChangeSlot(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
+                            <X size={16} />
+                        </button>
+                    </div>
+                    {changableSlots.length === 0 ? (
+                        <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", padding: "12px 0" }}>No available slots</p>
+                    ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {changableSlots.map(slot => (
+                                <button key={slot} onClick={() => handleChangeSlot(slot)} style={{
+                                    padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                                    background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", cursor: "pointer",
+                                }}>
+                                    {slot}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Add subject panel */}
+            {editMode && showAddSubject && (
+                <div style={{ margin: "8px 20px 0", padding: "14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Add Subject</p>
+                        <button onClick={() => setShowAddSubject(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <input
+                            placeholder="Subject name (required)"
+                            value={newSubject.title}
+                            onChange={e => setNewSubject(p => ({ ...p, title: e.target.value }))}
+                            style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                        />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <input
+                                placeholder="Code (optional)"
+                                value={newSubject.code}
+                                onChange={e => setNewSubject(p => ({ ...p, code: e.target.value }))}
+                                style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                            />
+                            <input
+                                placeholder="Room (optional)"
+                                value={newSubject.room}
+                                onChange={e => setNewSubject(p => ({ ...p, room: e.target.value }))}
+                                style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                            />
+                        </div>
+                        <select
+                            value={newSubject.type}
+                            onChange={e => setNewSubject(p => ({ ...p, type: e.target.value }))}
+                            style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                        >
+                            <option value="Theory">Theory</option>
+                            <option value="Practical">Practical</option>
+                        </select>
+                        <div>
+                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select SRM Slot</p>
+                            {availableSlots.length === 0 ? (
+                                <p style={{ fontSize: 13, color: "#94a3b8" }}>No available slots</p>
+                            ) : (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                    {availableSlots.map(slot => (
+                                        <button key={slot} onClick={() => setNewSubject(p => ({ ...p, slot }))} style={{
+                                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                                            background: newSubject.slot === slot ? "#1d4ed8" : "#f1f5f9",
+                                            color: newSubject.slot === slot ? "white" : "#475569",
+                                            border: "none", cursor: "pointer",
+                                        }}>
+                                            {slot}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleAddSubject}
+                            disabled={!newSubject.title || !newSubject.slot}
+                            style={{
+                                padding: "12px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                                background: (!newSubject.title || !newSubject.slot) ? "#f1f5f9" : "#1d4ed8",
+                                color: (!newSubject.title || !newSubject.slot) ? "#94a3b8" : "white",
+                                border: "none", cursor: (!newSubject.title || !newSubject.slot) ? "not-allowed" : "pointer",
+                            }}
+                        >
+                            Add Subject
+                        </button>
+                    </div>
                 </div>
             )}
 
             {data && (
                 <div style={{ padding: "12px 20px 16px", display: "flex", gap: 8 }}>
-                    {data.batch && (
-                        <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
-                            Batch {data.batch}
-                        </span>
-                    )}
-                    {data.section && (
-                        <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#f0fdf4", color: "#15803d", border: "1px solid #86efac" }}>
-                            {data.section}
-                        </span>
-                    )}
-                    {todayDayOrder && (
-                        <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fff3e0", color: "#ff6f00", border: "1px solid #ffcc80" }}>
-                            Today: DO {todayDayOrder}
-                        </span>
-                    )}
+                    {data.batch && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>Batch {data.batch}</span>}
+                    {data.section && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#f0fdf4", color: "#15803d", border: "1px solid #86efac" }}>{data.section}</span>}
+                    {todayDayOrder && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fff3e0", color: "#ff6f00", border: "1px solid #ffcc80" }}>Today: DO {todayDayOrder}</span>}
                 </div>
             )}
 
@@ -557,11 +753,7 @@ export default function TimetablePage() {
                         }}>
                             {day}
                             {todayDayOrder === day && (
-                                <span style={{
-                                    position: "absolute", top: 2, right: 2,
-                                    width: 6, height: 6, borderRadius: "50%",
-                                    background: selectedDay === day ? "white" : "#ff6f00",
-                                }} />
+                                <span style={{ position: "absolute", top: 2, right: 2, width: 6, height: 6, borderRadius: "50%", background: selectedDay === day ? "white" : "#ff6f00" }} />
                             )}
                         </button>
                     ))}
@@ -589,39 +781,32 @@ export default function TimetablePage() {
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
                                 {slot.courses.map((course, ci) => (
                                     <div key={ci}>
-                                        {ci > 0 && (
-                                            <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", margin: "4px 0", borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>or</div>
-                                        )}
-                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                                        {ci > 0 && <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", margin: "4px 0", borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>or</div>}
+                                        <div
+                                            onClick={() => editMode && setSelectedCourse({ slotIndex, courseIndex: ci, course })}
+                                            style={{
+                                                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                                                cursor: editMode ? "pointer" : "default",
+                                                padding: editMode ? "8px" : "0",
+                                                borderRadius: editMode ? 10 : 0,
+                                                background: editMode && selectedCourse?.course.slot === course.slot ? "#eff6ff" : "transparent",
+                                                border: editMode && selectedCourse?.course.slot === course.slot ? "1px solid #bfdbfe" : "1px solid transparent",
+                                                transition: "all 0.15s",
+                                            }}
+                                        >
                                             <div style={{ flex: 1 }}>
                                                 <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3 }}>{course.title}</p>
-                                                <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{course.code}</p>
+                                                <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{course.code} {course.slot ? `• ${course.slot}` : ""}</p>
                                             </div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                <div style={{ textAlign: "right" }}>
-                                                    <span style={{
-                                                        fontSize: 11, padding: "3px 10px", borderRadius: 20, fontWeight: 600,
-                                                        background: course.type === "Practical" || course.type === "Lab Based Theory" ? "#f5f3ff" : "#fff3e0",
-                                                        color: course.type === "Practical" || course.type === "Lab Based Theory" ? "#7c3aed" : "#ff6f00",
-                                                    }}>
-                                                        {course.type === "Lab Based Theory" ? "Lab" : course.type}
-                                                    </span>
-                                                    <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontWeight: 500 }}>{course.room}</p>
-                                                </div>
-                                                {/* Remove button in edit mode */}
-                                                {editMode && (
-                                                    <button
-                                                        onClick={() => handleRemoveCourse(slotIndex, ci)}
-                                                        style={{
-                                                            width: 24, height: 24, borderRadius: "50%",
-                                                            background: "#fef2f2", border: "1px solid #fecaca",
-                                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                                            cursor: "pointer", flexShrink: 0,
-                                                        }}
-                                                    >
-                                                        <X size={12} color="#dc2626" />
-                                                    </button>
-                                                )}
+                                            <div style={{ textAlign: "right" }}>
+                                                <span style={{
+                                                    fontSize: 11, padding: "3px 10px", borderRadius: 20, fontWeight: 600,
+                                                    background: course.type === "Practical" || course.type === "Lab Based Theory" ? "#f5f3ff" : "#fff3e0",
+                                                    color: course.type === "Practical" || course.type === "Lab Based Theory" ? "#7c3aed" : "#ff6f00",
+                                                }}>
+                                                    {course.type === "Lab Based Theory" ? "Lab" : course.type}
+                                                </span>
+                                                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontWeight: 500 }}>{course.room}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -630,7 +815,24 @@ export default function TimetablePage() {
                         </div>
                     ))
                 )}
+
+                {/* Add subject button */}
+                {editMode && (
+                    <button
+                        onClick={() => { setShowAddSubject(!showAddSubject); setSelectedCourse(null); setShowChangeSlot(false); }}
+                        style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                            padding: "14px", borderRadius: 14,
+                            border: "1.5px dashed #bfdbfe", background: "#eff6ff",
+                            color: "#1d4ed8", fontSize: 14, fontWeight: 700, cursor: "pointer",
+                        }}
+                    >
+                        <Plus size={16} />
+                        Add Subject
+                    </button>
+                )}
             </div>
+            <div style={{ height: 120 }} />
         </PageWrapper>
     );
 }
