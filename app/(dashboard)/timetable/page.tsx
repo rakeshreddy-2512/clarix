@@ -430,7 +430,7 @@ export default function TimetablePage() {
                     slots.map((slot, index) => (
                         <div key={index} style={{
                             background: "white", borderRadius: 16, padding: "16px",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid var(--border-light)",
                             display: "flex", alignItems: "flex-start", gap: 16,
                         }}>
                             <div style={{ textAlign: "center", minWidth: 56, paddingTop: 2 }}>

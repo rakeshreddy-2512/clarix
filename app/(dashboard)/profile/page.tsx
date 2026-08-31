@@ -7,7 +7,7 @@ import { useFetchWithCache } from "@/hooks/useFetchWithCache";
 import { getProfileApi } from "@/lib/api";
 import { Student } from "@/utils/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, BellOff, ExternalLink } from "lucide-react";
+import { Bell, BellOff, ExternalLink, Sun, Moon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { getToken } from "@/lib/session";
 import { useDarkMode } from "@/hooks/useDarkMode";
@@ -132,9 +132,14 @@ export default function ProfilePage() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <button
                             onClick={toggle}
-                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, padding: "4px 8px" }}
+                            style={{
+                                width: 36, height: 36, borderRadius: 10,
+                                background: isDark ? "rgba(255,255,255,0.15)" : "#0f172a",
+                                border: "none", cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
                         >
-                            {isDark ? "☀️" : "🌙"}
+                            {isDark ? <Sun size={18} color="#ffffff" /> : <Moon size={18} color="#ffffff" />}
                         </button>
                         <button
                             onClick={() => setSupportOpen(true)}

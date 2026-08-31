@@ -7,7 +7,7 @@ const SupportModal = dynamic(() => import("@/components/support/SupportModal"), 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck2, BarChart3, TrendingUp, CalendarDays, User, Calendar, Menu, X, Calculator } from "lucide-react";
+import { CalendarCheck2, BarChart3, TrendingUp, CalendarDays, User, Calendar, Menu, X, Calculator, Sun, Moon } from "lucide-react";
 
 const NAV = [
     { to: "/attendance", icon: CalendarCheck2, label: "Attendance" },
@@ -52,7 +52,7 @@ export default function BottomNav() {
             <style>{logoStyles}</style>
             <AnimatePresence>{supportOpen && <SupportModal onClose={() => setSupportOpen(false)} />}</AnimatePresence>
 
-            {/* ── MOBILE bottom nav ── */}
+            {/* MOBILE bottom nav */}
             <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-8 px-4 md:hidden">
                 <motion.div
                     initial={{ y: 100, opacity: 0 }}
@@ -122,7 +122,7 @@ export default function BottomNav() {
                 </motion.div>
             </nav>
 
-            {/* ── DESKTOP sidebar ── */}
+            {/* DESKTOP sidebar */}
             <div className="hidden md:block">
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -131,15 +131,10 @@ export default function BottomNav() {
                         top: 20,
                         right: sidebarOpen ? 236 : 20,
                         zIndex: 100,
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        background: "#000000",
-                        border: "1px solid #333333",
+                        width: 36, height: 36, borderRadius: 10,
+                        background: "#000000", border: "1px solid #333333",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        display: "flex", alignItems: "center", justifyContent: "center",
                         cursor: "pointer",
                         transition: "right 0.35s cubic-bezier(0.4,0,0.2,1)",
                     }}
@@ -210,20 +205,11 @@ export default function BottomNav() {
                                                     padding: "11px 14px", borderRadius: 12,
                                                     background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
                                                     border: isActive ? "1px solid rgba(255,255,255,0.2)" : "1px solid transparent",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.15s",
+                                                    cursor: "pointer", transition: "all 0.15s",
                                                 }}
                                             >
-                                                <Icon
-                                                    size={18}
-                                                    strokeWidth={isActive ? 2.5 : 1.8}
-                                                    color={isActive ? "#ffffff" : "rgba(255,255,255,0.6)"}
-                                                />
-                                                <span style={{
-                                                    fontSize: 14,
-                                                    fontWeight: isActive ? 700 : 500,
-                                                    color: isActive ? "#ffffff" : "rgba(255,255,255,0.6)",
-                                                }}>
+                                                <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} color={isActive ? "#ffffff" : "rgba(255,255,255,0.6)"} />
+                                                <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500, color: isActive ? "#ffffff" : "rgba(255,255,255,0.6)" }}>
                                                     {label}
                                                 </span>
                                             </motion.div>
@@ -241,10 +227,24 @@ export default function BottomNav() {
                                     border: "1px solid rgba(255,255,255,0.15)",
                                     cursor: "pointer", width: "100%", transition: "all 0.15s",
                                 }}>
-                                    <span style={{ fontSize: 16 }}>{isDark ? "☀️" : "🌙"}</span>
-                                    <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{isDark ? "Light Mode" : "Dark Mode"}</span>
+                                    <div style={{
+                                        width: 24, height: 24, borderRadius: 6,
+                                        background: isDark ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}>
+                                        {isDark ? <Sun size={14} color="#ffffff" /> : <Moon size={14} color="#ffffff" />}
+                                    </div>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>
+                                        {isDark ? "Light Mode" : "Dark Mode"}
+                                    </span>
                                 </button>
-                                <button onClick={() => setSupportOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", width: "100%", transition: "all 0.15s" }}>
+                                <button onClick={() => setSupportOpen(true)} style={{
+                                    display: "flex", alignItems: "center", gap: 10,
+                                    padding: "11px 14px", borderRadius: 12,
+                                    background: "linear-gradient(135deg, rgba(255,95,95,0.2), rgba(255,152,0,0.2))",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    cursor: "pointer", width: "100%", transition: "all 0.15s",
+                                }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>Donate</span>
                                 </button>
                             </div>
