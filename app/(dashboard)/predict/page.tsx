@@ -29,24 +29,51 @@ interface TimetableResult {
     section: string;
 }
 
+function getTimetableSubjects(timetable: Record<number, TimetableSlot[]>): AttendanceCourse[] {
+    const seen = new Set<string>();
+    const subjects: AttendanceCourse[] = [];
+    Object.values(timetable).forEach(slots => {
+        slots.forEach(slot => {
+            slot.courses.forEach(course => {
+                if (course.code && !seen.has(course.code)) {
+                    seen.add(course.code);
+                    subjects.push({
+                        code: course.code,
+                        title: course.title,
+                        faculty: "—",
+                        category: course.type === "Practical" ? "Practical" : "Theory",
+                        slot: course.slot || "—",
+                        room: course.room || "—",
+                        totalClasses: 0,
+                        attended: 0,
+                        absent: 0,
+                        percentage: 0,
+                    });
+                }
+            });
+        });
+    });
+    return subjects;
+}
+
 export default function PredictPage() {
     const { data, loading, error } = useFetch<AttendanceCourse[]>(
         getAttendanceApi as () => Promise<AttendanceCourse[]>
     );
 
-    const { data: timetableData } = useFetch<TimetableResult>(
+    const { data: timetableData, loading: timetableLoading } = useFetch<TimetableResult>(
         getTimetableApi as () => Promise<TimetableResult>
     );
 
-    // ✅ Build slot map from timetable — code → slot
+    const isDown = !!error && !data;
+
+    // Build slot map from timetable
     const timetableSlotMap: Record<string, string> = {};
     if (timetableData?.timetable) {
         Object.values(timetableData.timetable).forEach((slots) => {
             slots.forEach((slot) => {
                 slot.courses.forEach((c) => {
                     if (c.code && c.slot && c.slot !== "LAB") {
-                        // For courses with multiple slots (P46, P47, P48)
-                        // store all slots comma separated
                         if (timetableSlotMap[c.code]) {
                             if (!timetableSlotMap[c.code].includes(c.slot)) {
                                 timetableSlotMap[c.code] += `,${c.slot}`;
@@ -60,8 +87,13 @@ export default function PredictPage() {
         });
     }
 
-    // ✅ Merge correct slot from timetable into attendance courses
-    const courses = (data || []).map(c => {
+    // Fallback subjects from timetable when SRM is down
+    const fallbackCourses = isDown && timetableData?.timetable
+        ? getTimetableSubjects(timetableData.timetable)
+        : [];
+
+    // Merge correct slot from timetable into attendance courses
+    const courses = (data || fallbackCourses).map(c => {
         if (c.slot === "LAB" && timetableSlotMap[c.code]) {
             return { ...c, slot: timetableSlotMap[c.code] };
         }
@@ -70,7 +102,7 @@ export default function PredictPage() {
 
     const batch = timetableData?.batch || 1;
 
-    if (loading) return <LoadingScreen />;
+    if (loading || (isDown && timetableLoading)) return <LoadingScreen />;
 
     return (
         <PageWrapper>
@@ -99,7 +131,15 @@ export default function PredictPage() {
                 </motion.div>
             </div>
 
-            {error && (
+            {isDown && (
+                <div style={{ padding: "0 20px 16px" }}>
+                    <div style={{ padding: "12px 16px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fcd34d", color: "#b45309", fontSize: 13, fontWeight: 600, textAlign: "center" }}>
+                        ⚠️ Academia is currently down. Showing subjects from your timetable with 0% attendance.
+                    </div>
+                </div>
+            )}
+
+            {!isDown && error && (
                 <div style={{ padding: "0 20px 16px" }}>
                     <div style={{ padding: "14px", borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 14, textAlign: "center" }}>
                         {error}
