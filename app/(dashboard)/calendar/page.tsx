@@ -67,7 +67,7 @@ export default function CalendarPage() {
             </div>
 
             <div style={{ padding: "0 20px 100px" }}>
-                <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "60px 60px 1fr 80px", background: "#1d4ed8", padding: "12px 16px" }}>
                         {["Date", "Day", "Event", "Day Order"].map(h => (
                             <div key={h} style={{ fontSize: 12, fontWeight: 700, color: "#ffffff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>

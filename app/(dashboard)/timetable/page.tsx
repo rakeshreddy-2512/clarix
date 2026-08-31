@@ -352,7 +352,7 @@ export default function TimetablePage() {
                             position: "absolute", top: "calc(100% + 8px)", right: 0,
                             background: "white", borderRadius: 12,
                             boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-                            border: "1px solid #e2e8f0", overflow: "hidden", zIndex: 100, minWidth: 140,
+                            border: "1px solid var(--border)", overflow: "hidden", zIndex: 100, minWidth: 140,
                         }}>
                             {(["pdf", "jpeg"] as const).map((fmt, idx) => (
                                 <button
@@ -363,7 +363,7 @@ export default function TimetablePage() {
                                         width: "100%", padding: "12px 16px",
                                         background: "none", border: "none",
                                         cursor: "pointer", fontSize: 13, fontWeight: 600,
-                                        color: "#0f172a", textAlign: "left",
+                                        color: "var(--text-primary)", textAlign: "left",
                                         borderBottom: idx === 0 ? "1px solid #f1f5f9" : "none",
                                     }}
                                     onMouseEnter={e => (e.currentTarget.style.background = "#fff3e0")}
@@ -447,7 +447,7 @@ export default function TimetablePage() {
                                         )}
                                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                                             <div style={{ flex: 1 }}>
-                                                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", lineHeight: 1.3 }}>{course.title}</p>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3 }}>{course.title}</p>
                                                 <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{course.code}</p>
                                             </div>
                                             <div style={{ textAlign: "right" }}>
@@ -458,7 +458,7 @@ export default function TimetablePage() {
                                                 }}>
                                                     {course.type === "Lab Based Theory" ? "Lab" : course.type}
                                                 </span>
-                                                <p style={{ fontSize: 12, color: "#64748b", marginTop: 6, fontWeight: 500 }}>{course.room}</p>
+                                                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontWeight: 500 }}>{course.room}</p>
                                             </div>
                                         </div>
                                     </div>

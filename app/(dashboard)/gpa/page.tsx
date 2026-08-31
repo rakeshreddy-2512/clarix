@@ -37,13 +37,13 @@ function getGPAColor(gpa: number) {
 }
 
 const inputStyle: React.CSSProperties = {
-    background: "#f8fafc",
+    background: "var(--bg-primary)",
     border: "1.5px solid #e2e8f0",
     borderRadius: 10,
     padding: "10px 12px",
     fontSize: 14,
     fontWeight: 500,
-    color: "#0f172a",
+    color: "var(--text-primary)",
     outline: "none",
     width: "100%",
     cursor: "pointer",
@@ -167,7 +167,7 @@ export default function GPAPage() {
             <Header title="GPA Calculator" subtitle="Calculate your GPA & CGPA" />
 
             <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
-                <div style={{ display: "inline-flex", padding: 4, borderRadius: 12, gap: 3, background: "#f1f5f9", border: "1px solid #e2e8f0" }}>
+                <div style={{ display: "inline-flex", padding: 4, borderRadius: 12, gap: 3, background: "#f1f5f9", border: "1px solid var(--border)" }}>
                     {(["gpa", "cgpa"] as const).map((tab) => (
                         <button key={tab} onClick={() => setActiveTab(tab)} style={{
                             padding: "7px 24px", borderRadius: 9, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
@@ -202,8 +202,8 @@ export default function GPAPage() {
 
                             {subjectGrades.map((sub, i) => (
                                 <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                                    style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "14px 16px" }}>
-                                    <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{sub.subject}</p>
+                                    style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: "14px 16px" }}>
+                                    <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>{sub.subject}</p>
                                     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                                         <div style={{ background: "#f0eeff", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#302b63", whiteSpace: "nowrap" }}>
                                             {sub.credit} Credits
@@ -216,12 +216,12 @@ export default function GPAPage() {
                                 </motion.div>
                             ))}
 
-                            <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 16 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>Grade Scale</p>
+                            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: 16 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>Grade Scale</p>
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                                     {GRADES.map(g => (
-                                        <div key={g.value} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, background: "#f8fafc", border: "1px solid #f1f5f9" }}>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{g.label.split(" — ")[0]}</span>
+                                        <div key={g.value} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, background: "var(--bg-primary)", border: "1px solid #f1f5f9" }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{g.label.split(" — ")[0]}</span>
                                             <span style={{ fontSize: 12, fontWeight: 600, color: "#302b63" }}>{g.value} pts</span>
                                         </div>
                                     ))}
@@ -246,8 +246,8 @@ export default function GPAPage() {
 
                             {cgpaSemesters.map((sem, i) => (
                                 <motion.div key={sem.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                    style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: "#64748b", minWidth: 70 }}>{sem.name}</span>
+                                    style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", minWidth: 70 }}>{sem.name}</span>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 4, textTransform: "uppercase" as const }}>GPA</label>
                                         <input type="number" min={0} max={10} step={0.01} placeholder="0.00"
@@ -287,8 +287,8 @@ export default function GPAPage() {
                                 </button>
                             )}
 
-                            <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 16 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>CGPA Requirements</p>
+                            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: 16 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>CGPA Requirements</p>
                                 {[
                                     { label: "Top Tech Companies", range: "8.0 - 9.0+", color: "#15803d" },
                                     { label: "Product Companies", range: "7.5 - 8.5+", color: "#302b63" },

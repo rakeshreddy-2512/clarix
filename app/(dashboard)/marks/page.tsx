@@ -102,7 +102,7 @@ export default function MarksPage() {
                             <motion.div
                                 initial={{ width: 0 }} animate={{ width: `${overallPct}%` }}
                                 transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
-                                style={{ height: "100%", borderRadius: 999, background: "#ffffff" }}
+                                style={{ height: "100%", borderRadius: 999, background: "var(--card-bg)" }}
                             />
                         </div>
                     </motion.div>
