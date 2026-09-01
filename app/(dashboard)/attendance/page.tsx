@@ -8,6 +8,7 @@ import TabSwitch from "@/components/ui/TabSwitch";
 import AttendanceCard from "@/components/attendance/AttendanceCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useFetchWithCache } from "@/hooks/useFetchWithCache";
+import { useFetch } from "@/hooks/useFetch";
 import { getAttendanceApi, getTimetableApi } from "@/lib/api";
 import { AttendanceCourse } from "@/utils/types";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
@@ -66,10 +67,8 @@ export default function AttendancePage() {
         "attendance",
         10000
     );
-    const { data: timetableData, loading: timetableLoading } = useFetchWithCache<TimetableResult>(
-        getTimetableApi as () => Promise<TimetableResult>,
-        "timetable",
-        3600000
+    const { data: timetableData, loading: timetableLoading } = useFetch<TimetableResult>(
+        getTimetableApi as () => Promise<TimetableResult>
     );
 
     const isDown = !!error && !data;

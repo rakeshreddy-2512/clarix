@@ -9,7 +9,7 @@ interface FetchState<T> {
     refetch: () => void;
 }
 
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 
 export function useFetchWithCache<T>(
     fetchFn: () => Promise<T>,
