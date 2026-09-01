@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
         // If custom timetable exists, return it directly
         if (customTimetable?.timetable_json) {
-            return NextResponse.json({ success: true, data: customTimetable.timetable_json, source: "custom" });
+            return NextResponse.json({ success: true, data: { timetable: customTimetable.timetable_json, batch: 1, section: "" }, source: "custom" });
         }
 
         const cached = await getCachedData(cacheKey);
