@@ -3,6 +3,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { scrapeTimetable } from "@/lib/scrapers/timetable.scraper";
 import { parseTimetable } from "@/lib/parsers/timetable.parser";
 import { getCachedData, cacheData } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
 import crypto from "crypto";
 
 function hashData(data: unknown): string {
@@ -17,7 +18,19 @@ export async function GET(req: NextRequest) {
         const { regNo, cookies } = auth.session;
         const cacheKey = `timetable:${regNo}`;
         const hashKey = `timetable:${regNo}:hash`;
-        const TTL = 86400; // 24 hours
+        const TTL = 3600;
+
+        // Check for custom timetable in Supabase
+        const { data: customTimetable } = await supabase
+            .from("custom_timetable")
+            .select("timetable_json")
+            .eq("reg_number", regNo)
+            .single();
+
+        // If custom timetable exists, return it directly
+        if (customTimetable?.timetable_json) {
+            return NextResponse.json({ success: true, data: customTimetable.timetable_json, source: "custom" });
+        }
 
         const cached = await getCachedData(cacheKey);
         if (cached) {

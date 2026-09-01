@@ -374,6 +374,7 @@ export default function TimetablePage() {
     const [showAddSubject, setShowAddSubject] = useState(false);
     const [newSubject, setNewSubject] = useState({ title: "", code: "", room: "", type: "Theory", slot: "" });
     const menuRef = useRef<HTMLDivElement>(null);
+    const pageTopRef = useRef<HTMLDivElement>(null);
 
     const { data, loading } = useFetchWithCache<TimetableResult>(
         getTimetableApi as () => Promise<TimetableResult>,
@@ -526,6 +527,8 @@ export default function TimetablePage() {
 
     return (
         <PageWrapper>
+            <div ref={pageTopRef} />
+
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 20px 0" }}>
                 <Header
                     title="Timetable"
@@ -674,7 +677,6 @@ export default function TimetablePage() {
                                 Change Slot
                             </p>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                {/* Current slot button */}
                                 <button
                                     onClick={() => setEditSubject(p => ({ ...p, slot: "" }))}
                                     style={{
@@ -687,7 +689,6 @@ export default function TimetablePage() {
                                 >
                                     {selectedCourse.course.slot} (current)
                                 </button>
-                                {/* Available slots */}
                                 {changeableSlots.map(slot => (
                                     <button
                                         key={slot}
@@ -861,6 +862,7 @@ export default function TimetablePage() {
                                                 setSelectedCourse({ slotIndex, courseIndex: ci, course });
                                                 setEditSubject({ title: course.title, code: course.code || "", room: course.room || "", type: course.type || "Theory", slot: "" });
                                                 setShowAddSubject(false);
+                                                setTimeout(() => pageTopRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
                                             }}
                                             style={{
                                                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
@@ -896,7 +898,11 @@ export default function TimetablePage() {
 
                 {editMode && (
                     <button
-                        onClick={() => { setShowAddSubject(!showAddSubject); setSelectedCourse(null); }}
+                        onClick={() => {
+                            setShowAddSubject(!showAddSubject);
+                            setSelectedCourse(null);
+                            setTimeout(() => pageTopRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+                        }}
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                             padding: "14px", borderRadius: 14,

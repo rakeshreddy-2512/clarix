@@ -79,12 +79,27 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, message: "No users to notify" });
         }
 
+        // ✅ Step 2b — Fetch all custom timetables at once
+        const { data: customTimetables } = await supabase
+            .from("custom_timetable")
+            .select("reg_number, timetable_json");
+
+        const customTimetableMap: Record<string, any> = {};
+        if (customTimetables) {
+            customTimetables.forEach(ct => {
+                customTimetableMap[ct.reg_number] = ct.timetable_json;
+            });
+        }
+
         let remindersSent = 0;
 
         // ✅ Step 3 — Send reminders for each user
         for (const user of users) {
             try {
-                const timetable = user.timetable_json?.timetable;
+                // Use custom timetable if exists, else fall back to academia timetable
+                const timetable = customTimetableMap[user.reg_number]?.timetable
+                    || user.timetable_json?.timetable;
+
                 if (!timetable) continue;
 
                 const daySlots = timetable[dayOrder] || [];
