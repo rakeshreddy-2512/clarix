@@ -370,7 +370,7 @@ export default function TimetablePage() {
     const [hasCustom, setHasCustom] = useState(false);
     const [saving, setSaving] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<{ slotIndex: number; courseIndex: number; course: Course } | null>(null);
-    const [editSubject, setEditSubject] = useState({ title: "", code: "", room: "", type: "Theory" });
+    const [editSubject, setEditSubject] = useState({ title: "", code: "", room: "", type: "Theory", slot: "" });
     const [showAddSubject, setShowAddSubject] = useState(false);
     const [newSubject, setNewSubject] = useState({ title: "", code: "", room: "", type: "Theory", slot: "" });
     const menuRef = useRef<HTMLDivElement>(null);
@@ -436,13 +436,28 @@ export default function TimetablePage() {
 
     const handleSaveEdit = () => {
         if (!editedTimetable || !selectedCourse) return;
-        const updated = updateSubjectInTimetable(editedTimetable, selectedCourse.course.slot, {
-            ...selectedCourse.course,
-            title: editSubject.title,
-            code: editSubject.code,
-            room: editSubject.room,
-            type: editSubject.type,
-        });
+        const newSlot = editSubject.slot || selectedCourse.course.slot;
+        const oldSlot = selectedCourse.course.slot;
+        let updated = editedTimetable;
+        if (newSlot !== oldSlot) {
+            updated = removeSubjectBySlot(editedTimetable, oldSlot);
+            updated = addSubjectToTimetable(updated, newSlot, {
+                ...selectedCourse.course,
+                title: editSubject.title,
+                code: editSubject.code,
+                room: editSubject.room,
+                type: editSubject.type,
+                slot: newSlot,
+            }, batch);
+        } else {
+            updated = updateSubjectInTimetable(editedTimetable, oldSlot, {
+                ...selectedCourse.course,
+                title: editSubject.title,
+                code: editSubject.code,
+                room: editSubject.room,
+                type: editSubject.type,
+            });
+        }
         setEditedTimetable(updated);
         setSelectedCourse(null);
     };
@@ -502,6 +517,9 @@ export default function TimetablePage() {
     };
 
     const availableSlots = editedTimetable ? getAvailableSlots(editedTimetable, batch) : [];
+    const changeableSlots = editedTimetable && selectedCourse
+        ? getAvailableSlots(editedTimetable, batch, selectedCourse.course.slot)
+        : [];
 
     if (loading) return <LoadingScreen />;
     const todayDayOrder = plannerData?.map?.[getTodayIST()]?.dayOrder;
@@ -602,9 +620,9 @@ export default function TimetablePage() {
             )}
 
             {/* Edit mode banner */}
-            {editMode && (
+            {editMode && !selectedCourse && !showAddSubject && (
                 <div style={{ margin: "8px 20px 0", padding: "10px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fcd34d" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Tap a subject to edit or remove. Confirm to save changes.</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Tap a subject to edit, change slot, or remove. Confirm to save.</p>
                 </div>
             )}
 
@@ -614,7 +632,7 @@ export default function TimetablePage() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                         <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
                             Edit Subject
-                            <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>Slot {selectedCourse.course.slot}</span>
+                            <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>Current: {selectedCourse.course.slot}</span>
                         </p>
                         <button onClick={() => setSelectedCourse(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
                             <X size={16} />
@@ -649,6 +667,44 @@ export default function TimetablePage() {
                             <option value="Theory">Theory</option>
                             <option value="Practical">Practical</option>
                         </select>
+
+                        {/* Change slot */}
+                        <div>
+                            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                Change Slot
+                            </p>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                {/* Current slot button */}
+                                <button
+                                    onClick={() => setEditSubject(p => ({ ...p, slot: "" }))}
+                                    style={{
+                                        padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                                        background: !editSubject.slot ? "#1d4ed8" : "#f0fdf4",
+                                        color: !editSubject.slot ? "white" : "#15803d",
+                                        border: !editSubject.slot ? "none" : "1px solid #86efac",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    {selectedCourse.course.slot} (current)
+                                </button>
+                                {/* Available slots */}
+                                {changeableSlots.map(slot => (
+                                    <button
+                                        key={slot}
+                                        onClick={() => setEditSubject(p => ({ ...p, slot }))}
+                                        style={{
+                                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                                            background: editSubject.slot === slot ? "#1d4ed8" : "#f1f5f9",
+                                            color: editSubject.slot === slot ? "white" : "#475569",
+                                            border: "none", cursor: "pointer",
+                                        }}
+                                    >
+                                        {slot}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div style={{ display: "flex", gap: 8 }}>
                             <button
                                 onClick={handleSaveEdit}
@@ -803,7 +859,7 @@ export default function TimetablePage() {
                                             onClick={() => {
                                                 if (!editMode) return;
                                                 setSelectedCourse({ slotIndex, courseIndex: ci, course });
-                                                setEditSubject({ title: course.title, code: course.code || "", room: course.room || "", type: course.type || "Theory" });
+                                                setEditSubject({ title: course.title, code: course.code || "", room: course.room || "", type: course.type || "Theory", slot: "" });
                                                 setShowAddSubject(false);
                                             }}
                                             style={{
