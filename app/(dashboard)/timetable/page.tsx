@@ -5,7 +5,7 @@ import { getTimetableApi, getProfileApi, getPlannerApi } from "@/lib/api";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Header from "@/components/layout/Header";
-import { Download, ChevronDown, Edit2, X, RotateCcw, Check, Plus, ArrowRight } from "lucide-react";
+import { Download, ChevronDown, Edit2, X, RotateCcw, Check, Plus } from "lucide-react";
 import { getToken } from "@/lib/session";
 
 interface Course {
@@ -94,7 +94,6 @@ function getTodayIST(): string {
     return `${y}-${m}-${d}`;
 }
 
-// Get occupied slots from timetable
 function getOccupiedSlots(timetable: Timetable): Set<string> {
     const occupied = new Set<string>();
     Object.values(timetable).forEach(slots => {
@@ -107,7 +106,6 @@ function getOccupiedSlots(timetable: Timetable): Set<string> {
     return occupied;
 }
 
-// Get available slots (all minus occupied)
 function getAvailableSlots(timetable: Timetable, batch: number, excludeSlot?: string): string[] {
     const schedule = batch === 2 ? BATCH2_SCHEDULE : BATCH1_SCHEDULE;
     const occupied = getOccupiedSlots(timetable);
@@ -115,17 +113,10 @@ function getAvailableSlots(timetable: Timetable, batch: number, excludeSlot?: st
     return Object.keys(schedule).filter(s => !occupied.has(s));
 }
 
-// Add subject to timetable using slot mapping
-function addSubjectToTimetable(
-    timetable: Timetable,
-    slotName: string,
-    course: Course,
-    batch: number
-): Timetable {
+function addSubjectToTimetable(timetable: Timetable, slotName: string, course: Course, batch: number): Timetable {
     const schedule = batch === 2 ? BATCH2_SCHEDULE : BATCH1_SCHEDULE;
     const slotSchedule = schedule[slotName];
     if (!slotSchedule) return timetable;
-
     const updated = JSON.parse(JSON.stringify(timetable));
     slotSchedule.forEach(({ day, startTime, endTime }) => {
         const existing = updated[day].find((s: TimetableSlot) => s.startTime === startTime && s.endTime === endTime);
@@ -142,16 +133,26 @@ function addSubjectToTimetable(
     return updated;
 }
 
-// Remove subject by slot name from all day orders
 function removeSubjectBySlot(timetable: Timetable, slotName: string): Timetable {
     const updated = JSON.parse(JSON.stringify(timetable));
     Object.keys(updated).forEach(day => {
         updated[Number(day)] = updated[Number(day)]
-            .map((slot: TimetableSlot) => ({
-                ...slot,
-                courses: slot.courses.filter((c: Course) => c.slot?.toUpperCase() !== slotName.toUpperCase()),
-            }))
+            .map((slot: TimetableSlot) => ({ ...slot, courses: slot.courses.filter((c: Course) => c.slot?.toUpperCase() !== slotName.toUpperCase()) }))
             .filter((slot: TimetableSlot) => slot.courses.length > 0);
+    });
+    return updated;
+}
+
+function updateSubjectInTimetable(timetable: Timetable, slotName: string, updatedCourse: Course): Timetable {
+    const updated = JSON.parse(JSON.stringify(timetable));
+    Object.keys(updated).forEach(day => {
+        updated[Number(day)].forEach((slot: TimetableSlot) => {
+            slot.courses.forEach((c: Course, i: number) => {
+                if (c.slot?.toUpperCase() === slotName.toUpperCase()) {
+                    slot.courses[i] = { ...c, ...updatedCourse, slot: c.slot };
+                }
+            });
+        });
     });
     return updated;
 }
@@ -354,6 +355,12 @@ async function exportTimetableJPEG(timetable: Timetable, batch: number, section:
     link.click();
 }
 
+const inputStyle: React.CSSProperties = {
+    padding: "10px 12px", borderRadius: 10,
+    border: "1.5px solid #e2e8f0", background: "#ffffff",
+    fontSize: 13, outline: "none", width: "100%",
+};
+
 export default function TimetablePage() {
     const [selectedDay, setSelectedDay] = useState(1);
     const [exporting, setExporting] = useState(false);
@@ -363,7 +370,7 @@ export default function TimetablePage() {
     const [hasCustom, setHasCustom] = useState(false);
     const [saving, setSaving] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<{ slotIndex: number; courseIndex: number; course: Course } | null>(null);
-    const [showChangeSlot, setShowChangeSlot] = useState(false);
+    const [editSubject, setEditSubject] = useState({ title: "", code: "", room: "", type: "Theory" });
     const [showAddSubject, setShowAddSubject] = useState(false);
     const [newSubject, setNewSubject] = useState({ title: "", code: "", room: "", type: "Theory", slot: "" });
     const menuRef = useRef<HTMLDivElement>(null);
@@ -417,7 +424,6 @@ export default function TimetablePage() {
         setEditedTimetable(JSON.parse(JSON.stringify(hasCustom && editedTimetable ? editedTimetable : originalTimetable)));
         setEditMode(true);
         setSelectedCourse(null);
-        setShowChangeSlot(false);
         setShowAddSubject(false);
     };
 
@@ -428,14 +434,17 @@ export default function TimetablePage() {
         setSelectedCourse(null);
     };
 
-    const handleChangeSlot = (newSlot: string) => {
+    const handleSaveEdit = () => {
         if (!editedTimetable || !selectedCourse) return;
-        const oldSlot = selectedCourse.course.slot;
-        let updated = removeSubjectBySlot(editedTimetable, oldSlot);
-        updated = addSubjectToTimetable(updated, newSlot, { ...selectedCourse.course, slot: newSlot }, batch);
+        const updated = updateSubjectInTimetable(editedTimetable, selectedCourse.course.slot, {
+            ...selectedCourse.course,
+            title: editSubject.title,
+            code: editSubject.code,
+            room: editSubject.room,
+            type: editSubject.type,
+        });
         setEditedTimetable(updated);
         setSelectedCourse(null);
-        setShowChangeSlot(false);
     };
 
     const handleAddSubject = () => {
@@ -493,9 +502,6 @@ export default function TimetablePage() {
     };
 
     const availableSlots = editedTimetable ? getAvailableSlots(editedTimetable, batch) : [];
-    const changableSlots = editedTimetable && selectedCourse
-        ? getAvailableSlots(editedTimetable, batch, selectedCourse.course.slot)
-        : [];
 
     if (loading) return <LoadingScreen />;
     const todayDayOrder = plannerData?.map?.[getTodayIST()]?.dayOrder;
@@ -522,7 +528,7 @@ export default function TimetablePage() {
                         </button>
                     ) : (
                         <>
-                            <button onClick={() => { setEditMode(false); setSelectedCourse(null); setShowChangeSlot(false); setShowAddSubject(false); }} style={{
+                            <button onClick={() => { setEditMode(false); setSelectedCourse(null); setShowAddSubject(false); }} style={{
                                 display: "flex", alignItems: "center", gap: 6,
                                 padding: "8px 14px", borderRadius: 12,
                                 background: "#f1f5f9", color: "#64748b",
@@ -598,64 +604,75 @@ export default function TimetablePage() {
             {/* Edit mode banner */}
             {editMode && (
                 <div style={{ margin: "8px 20px 0", padding: "10px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fcd34d" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Tap a subject to remove or change its slot. Reminders will update after confirming.</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#b45309" }}>✏️ Tap a subject to edit or remove. Confirm to save changes.</p>
                 </div>
             )}
 
-            {/* Selected course actions */}
-            {editMode && selectedCourse && !showChangeSlot && (
+            {/* Edit subject panel */}
+            {editMode && selectedCourse && (
                 <div style={{ margin: "8px 20px 0", padding: "14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 10 }}>
-                        {selectedCourse.course.title}
-                        <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>Slot {selectedCourse.course.slot}</span>
-                    </p>
-                    <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => handleRemoveCourse(selectedCourse.course)} style={{
-                            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                            background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer",
-                        }}>
-                            Remove Subject
-                        </button>
-                        <button onClick={() => setShowChangeSlot(true)} style={{
-                            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                            background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", cursor: "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                        }}>
-                            <ArrowRight size={13} />Change Slot
-                        </button>
-                        <button onClick={() => setSelectedCourse(null)} style={{
-                            padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                            background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0", cursor: "pointer",
-                        }}>
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Change slot picker */}
-            {editMode && showChangeSlot && selectedCourse && (
-                <div style={{ margin: "8px 20px 0", padding: "14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Select new slot for {selectedCourse.course.title}</p>
-                        <button onClick={() => setShowChangeSlot(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                            Edit Subject
+                            <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>Slot {selectedCourse.course.slot}</span>
+                        </p>
+                        <button onClick={() => setSelectedCourse(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
                             <X size={16} />
                         </button>
                     </div>
-                    {changableSlots.length === 0 ? (
-                        <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", padding: "12px 0" }}>No available slots</p>
-                    ) : (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {changableSlots.map(slot => (
-                                <button key={slot} onClick={() => handleChangeSlot(slot)} style={{
-                                    padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                                    background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", cursor: "pointer",
-                                }}>
-                                    {slot}
-                                </button>
-                            ))}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <input
+                            placeholder="Subject name"
+                            value={editSubject.title}
+                            onChange={e => setEditSubject(p => ({ ...p, title: e.target.value }))}
+                            style={inputStyle}
+                        />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <input
+                                placeholder="Code (optional)"
+                                value={editSubject.code}
+                                onChange={e => setEditSubject(p => ({ ...p, code: e.target.value }))}
+                                style={inputStyle}
+                            />
+                            <input
+                                placeholder="Room (optional)"
+                                value={editSubject.room}
+                                onChange={e => setEditSubject(p => ({ ...p, room: e.target.value }))}
+                                style={inputStyle}
+                            />
                         </div>
-                    )}
+                        <select
+                            value={editSubject.type}
+                            onChange={e => setEditSubject(p => ({ ...p, type: e.target.value }))}
+                            style={inputStyle}
+                        >
+                            <option value="Theory">Theory</option>
+                            <option value="Practical">Practical</option>
+                        </select>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={!editSubject.title}
+                                style={{
+                                    flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                                    background: !editSubject.title ? "#f1f5f9" : "#1d4ed8",
+                                    color: !editSubject.title ? "#94a3b8" : "white",
+                                    border: "none", cursor: !editSubject.title ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                onClick={() => handleRemoveCourse(selectedCourse.course)}
+                                style={{
+                                    flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                                    background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer",
+                                }}
+                            >
+                                Remove Subject
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -673,26 +690,26 @@ export default function TimetablePage() {
                             placeholder="Subject name (required)"
                             value={newSubject.title}
                             onChange={e => setNewSubject(p => ({ ...p, title: e.target.value }))}
-                            style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                            style={inputStyle}
                         />
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                             <input
                                 placeholder="Code (optional)"
                                 value={newSubject.code}
                                 onChange={e => setNewSubject(p => ({ ...p, code: e.target.value }))}
-                                style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                                style={inputStyle}
                             />
                             <input
                                 placeholder="Room (optional)"
                                 value={newSubject.room}
                                 onChange={e => setNewSubject(p => ({ ...p, room: e.target.value }))}
-                                style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                                style={inputStyle}
                             />
                         </div>
                         <select
                             value={newSubject.type}
                             onChange={e => setNewSubject(p => ({ ...p, type: e.target.value }))}
-                            style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#ffffff", fontSize: 13, outline: "none" }}
+                            style={inputStyle}
                         >
                             <option value="Theory">Theory</option>
                             <option value="Practical">Practical</option>
@@ -783,7 +800,12 @@ export default function TimetablePage() {
                                     <div key={ci}>
                                         {ci > 0 && <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", margin: "4px 0", borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>or</div>}
                                         <div
-                                            onClick={() => editMode && setSelectedCourse({ slotIndex, courseIndex: ci, course })}
+                                            onClick={() => {
+                                                if (!editMode) return;
+                                                setSelectedCourse({ slotIndex, courseIndex: ci, course });
+                                                setEditSubject({ title: course.title, code: course.code || "", room: course.room || "", type: course.type || "Theory" });
+                                                setShowAddSubject(false);
+                                            }}
                                             style={{
                                                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                                                 cursor: editMode ? "pointer" : "default",
@@ -816,10 +838,9 @@ export default function TimetablePage() {
                     ))
                 )}
 
-                {/* Add subject button */}
                 {editMode && (
                     <button
-                        onClick={() => { setShowAddSubject(!showAddSubject); setSelectedCourse(null); setShowChangeSlot(false); }}
+                        onClick={() => { setShowAddSubject(!showAddSubject); setSelectedCourse(null); }}
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                             padding: "14px", borderRadius: 14,
